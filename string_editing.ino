@@ -3,6 +3,10 @@
 //========================================================================================
 
 String remove_spaces(String msg){
+  /*
+   * entfernt alle Leerzeichen in einem String und gibt den resultierenden
+   * String zurück
+   */
   int l = msg.length();
   byte ind = 0;
   while(ind < l){ // delete all spaces
@@ -19,6 +23,14 @@ String remove_spaces(String msg){
 //***********************************************************************************************************
 
 bool xyzf_ident(String msg, float xyzf[4]){
+  /*
+   * Sucht nach den Variablen X, Y, Z und F in einem String (die Reihenfolge ist dabei egal)
+   * und den jeweils darauf folgenden Werten. Beispiel: X213.21 Y543 F432 (es müssen nicht
+   * alle 4 Variablen vertreten sein). Die Werte werden in dem übergebenen float array "xyzf[4]"
+   * gespeichert: Wert für X an 0. Stelle, für Y an 1. Stelle, für Z an 2. Stelle und für F an
+   * 3. Stelle.
+   * Bei Erfolg wird true zurückgegeben, bei Misserfolg (zB wegen fehlerhaftem String) false
+   */
   byte ind = 0;
   int l = msg.length();
   int x=0;
@@ -110,6 +122,13 @@ bool xyzf_ident(String msg, float xyzf[4]){
 //***********************************************************************************************************
 
 bool xyz_ident(String msg, float xyz[3]){
+  /*
+   * Sucht nach den Variablen X, Y und Z in einem String (die Reihenfolge ist dabei egal)
+   * und den jeweils darauf folgenden Werten. Beispiel: X213.21 Y543 (es müssen nicht
+   * alle 3 Variablen vertreten sein). Die Werte werden in dem übergebenen float array "xyzf[3]"
+   * gespeichert: Wert für X an 0. Stelle, für Y an 1. Stelle und für Z an 2. Stelle
+   * Bei Erfolg wird true zurückgegeben, bei Misserfolg (zB wegen fehlerhaftem String) false
+   */
   byte ind = 0;
   int l = msg.length();
   int x=0;

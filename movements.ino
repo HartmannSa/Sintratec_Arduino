@@ -166,6 +166,9 @@ bool home_axis(char motor){
     byte motor_ind;
     byte motor_min_pin;
     byte motor_max_pin;
+    /*
+     * Definiere Variablen, welche weiter unten benutzt werden, dem Motor entsprechend:
+     */
     switch(motor){
       case 'x':
         motor_enable_pin = X_ENABLE_PIN;
@@ -183,7 +186,7 @@ bool home_axis(char motor){
         motor_min_pin = Y_MIN_PIN;
         motor_max_pin = Y_MAX_PIN;
         break;
-      case 'Z':
+      case 'z':
         motor_enable_pin = Z_ENABLE_PIN;
         motor_dir_pin = Z_DIR_PIN;
         motor_step_size = Z_STEP_SIZE;
@@ -192,7 +195,8 @@ bool home_axis(char motor){
         motor_max_pin = Z_MAX_PIN;
         break;
     }
-    /* Starte das Homing...
+    /* 
+     * Starte das Homing...
      */
     Serial.println(msg1);
     digitalWrite(motor_enable_pin,LOW);
