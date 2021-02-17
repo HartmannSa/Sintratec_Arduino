@@ -48,6 +48,9 @@ void G_gcode(String str){ // input: serial input string, but first character rem
     case 92:
       G92(msg);
       break;
+    case 100:
+      G100(msg);
+      break;
     default:
       error(1);
       arduino_ready(false);
@@ -131,7 +134,7 @@ void M_gcode(String str){ // input: serial input string, but first character rem
 void G0(String msg){
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G0...' erkannt wurde. 'msg' enthält nur den Rest des Strings hinter
    *  'G0'.
-   *  Wenn der String leer oder die Eingabe für X, Y, Z bzw. F falsch ist (wird per Funktion 'xyzf_ident()' überprüft - siehe
+   *  Wenn der String leer oder die Eingabe für X, Y, Z bzw. F falsch ist (wird per Funktion 'xyz_ident()' überprüft - siehe
    *  "string_editing.ino"), wird der entsprechende Fehler ausgegeben und die Funktion abgebrochen.
    *  ...
    */
@@ -140,10 +143,10 @@ void G0(String msg){
     arduino_ready(false);
     return;
   }
-  float xyzf_init[4] = {X_MAX_MOVE*10,Y_MAX_MOVE*10,Z_MAX_MOVE*10,SPEED};
-  float xyzf[4] = {X_MAX_MOVE*10,Y_MAX_MOVE*10,Z_MAX_MOVE*10,SPEED};
-  bool ind_changed[4] = {false,false,false,false};
-  bool input_ok = xyzf_ident(msg,xyzf);
+  float xyz_init[3] = {X_MAX_MOVE*10,Y_MAX_MOVE*10,Z_MAX_MOVE*10};
+  float xyz[3] = {X_MAX_MOVE*10,Y_MAX_MOVE*10,Z_MAX_MOVE*10};
+  bool ind_changed[3] = {false,false,false};
+  bool input_ok = xyz_ident(msg,xyz);
   if(!input_ok){
     arduino_ready(false);
     return;
@@ -153,56 +156,52 @@ void G0(String msg){
    *  werden soll. Diese Informationen werden in 'ind_changed[4]' gespeichert.
    *  ...
    */
-  for(int i=0;i<4;i++){
-    if(xyzf[i]!=xyzf_init[i]){
+  for(int i=0;i<3;i++){
+    if(xyz[i]!=xyz_init[i]){
       ind_changed[i]=true;
     }
-  }
-  /*  ...
-   *  Vor der Bewegung wird die Geschwindigkeit angepasst
-   *  ...
-   */
-  if(ind_changed[3]){
-    SPEED = xyzf[3];
-    Serial.println("Speed changed");
   }
   /*  ...
    *  Dann wird je nach Positionierungsmodus (relativ oder absolut) der Bewegungsbefehl an die entsprechenden Motoren
    *  gesendet (siehe Funktionen in "movements.ino").
    */
-  if(ind_changed[0] || ind_changed[1] || ind_changed[2]){
-    if(ABSOLUTE_POS){
-      if((xyzf[0]<X_MIN || xyzf[0]>X_MAX)&&ind_changed[0]){
-        error(8);
-        arduino_ready(false);
-        return;
-      }else if((xyzf[1]<Y_MIN || xyzf[1]>Y_MAX)&&ind_changed[1]){
-        error(9);
-        arduino_ready(false);
-        return;
-      }else if((xyzf[2]<Z_MIN || xyzf[2]>Z_MAX)&&ind_changed[2]){
-        error(10);
-        arduino_ready(false);
-        return;
-      }else{
-        move_steppers(xyzf[0]-X_POS,xyzf[1]-Y_POS,xyzf[2]-Z_POS,ind_changed[0],ind_changed[1],ind_changed[2]);
-      }
+  if(ABSOLUTE_POS){
+    if((xyz[0]<X_MIN || xyz[0]>X_MAX)&&ind_changed[0]){
+      error(8);
+      arduino_ready(false);
+      return;
+    }else if((xyz[1]<Y_MIN || xyz[1]>Y_MAX)&&ind_changed[1]){
+      error(9);
+      arduino_ready(false);
+      return;
+    }else if((xyz[2]<Z_MIN || xyz[2]>Z_MAX)&&ind_changed[2]){
+      error(10);
+      arduino_ready(false);
+      return;
     }else{
-      if((X_POS+xyzf[0]<X_MIN || X_POS+xyzf[0]>X_MAX)&&ind_changed[0]){
-        error(8);
-        arduino_ready(false);
-        return;
-      }else if((Y_POS+xyzf[1]<Y_MIN || Y_POS+xyzf[1]>Y_MAX)&&ind_changed[1]){
-        error(9);
-        arduino_ready(false);
-        return;
-      }else if((Z_POS+xyzf[2]<Z_MIN || Z_POS+xyzf[2]>Z_MAX)&&ind_changed[2]){
-        error(10);
-        arduino_ready(false);
-        return;
-      }else{
-        move_steppers(xyzf[0],xyzf[1],xyzf[2],ind_changed[0],ind_changed[1],ind_changed[2]);
-      }
+      /*Serial.println(ind_changed[0]);
+      Serial.println(xyz[0]-X_POS);
+      Serial.println(ind_changed[1]);
+      Serial.println(xyz[1]-Y_POS);
+      Serial.println(ind_changed[2]);
+      Serial.println(xyz[2]-Z_POS);*/
+      move_steppers(xyz[0]-X_POS,xyz[1]-Y_POS,xyz[2]-Z_POS,ind_changed[0],ind_changed[1],ind_changed[2]);
+    }
+  }else{
+    if((X_POS+xyz[0]<X_MIN || X_POS+xyz[0]>X_MAX)&&ind_changed[0]){
+      error(8);
+      arduino_ready(false);
+      return;
+    }else if((Y_POS+xyz[1]<Y_MIN || Y_POS+xyz[1]>Y_MAX)&&ind_changed[1]){
+      error(9);
+      arduino_ready(false);
+      return;
+    }else if((Z_POS+xyz[2]<Z_MIN || Z_POS+xyz[2]>Z_MAX)&&ind_changed[2]){
+      error(10);
+      arduino_ready(false);
+      return;
+    }else{
+      move_steppers(xyz[0],xyz[1],xyz[2],ind_changed[0],ind_changed[1],ind_changed[2]);
     }
   }
   arduino_ready(true);
@@ -324,24 +323,6 @@ void G92(String msg){ // set position
     return;
   }
   /*  ...
-   *  Ansonsten wird überprüft, ob die angegebenen Positionsänderungen zulässig sind, also im Bereich der
-   *  maximalen Verfahrwege liegen.
-   *  ...
-   */
-  if(xyz[0]<X_MIN || xyz[0]>X_MAX){
-    error(17);
-    arduino_ready(false);
-    return;
-  }else if(xyz[1]<Y_MIN || xyz[1]>Y_MAX){
-    error(18);
-    arduino_ready(false);
-    return;
-  }else if(xyz[2]<Z_MIN || xyz[2]>Z_MAX){
-    error(19);
-    arduino_ready(false);
-    return;
-  }
-  /*  ...
    *  Dann wird überprüft, welche Eingaben gemacht wurden, d.h. welche Motorenpositionen geändert werden
    *  sollen. Diese Informationen werden in 'ind_changed[3]' gespeichert.
    *  ...
@@ -350,6 +331,24 @@ void G92(String msg){ // set position
     if(xyz[i]!=xyz_init[i]){
       ind_changed[i]=true;
     }
+  }
+  /*  ...
+   *  Nun wird überprüft, ob die angegebenen Positionsänderungen zulässig sind, also im Bereich der
+   *  maximalen Verfahrwege liegen.
+   *  ...
+   */
+  if((xyz[0]<X_MIN || xyz[0]>X_MAX) && ind_changed[0]){
+    error(17);
+    arduino_ready(false);
+    return;
+  }if((xyz[1]<Y_MIN || xyz[1]>Y_MAX) && ind_changed[1]){
+    error(18);
+    arduino_ready(false);
+    return;
+  }if((xyz[2]<Z_MIN || xyz[2]>Z_MAX) && ind_changed[2]){
+    error(19);
+    arduino_ready(false);
+    return;
   }
   /*  ...
    *  Zuletzt werden die Motorpositionen abhängig von 'ind_changed[3]' gesetzt.
@@ -382,6 +381,163 @@ void G92(String msg){ // set position
 
 //***********************************************************************************************************
 
+void G100(String msg){
+  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G100' erkannt wurde. 'msg' enthält den
+   *  Rest des Strings hinter "G100". Dieser darf nicht leer sein, ansonsten: error.
+   *  Wenn die Eingabe für X, Y, bzw. Z falsch ist (wird per Funktion 'xyz_ident()' überprüft - siehe
+   *  "string_editing.ino"), wird der entsprechende Fehler ausgegeben und die Funktion abgebrochen.
+   *  ...
+   */
+  if(msg.length()==0){
+    error(31);
+    arduino_ready(false);
+    return;
+  }
+  float xyz_init[3] = {X_STEP_SIZE,Y_STEP_SIZE,Z_STEP_SIZE};
+  float xyz[3] = {X_STEP_SIZE,Y_STEP_SIZE,Z_STEP_SIZE};
+  bool ind_changed[3] = {false,false,false};
+  bool input_ok = xyz_ident(msg,xyz);
+  if(!input_ok){
+    arduino_ready(false);
+    return;
+  }
+  /*  ...
+   *  Ansonsten wird überprüft, welche Eingaben gemacht wurden, d.h. welche Motor-Stepsizes geändert werden
+   *  sollen. Diese Informationen werden in 'ind_changed[3]' gespeichert.
+   *  ...
+   */
+  for(int i=0;i<3;i++){
+    if(xyz[i]!=xyz_init[i]){
+      ind_changed[i]=true;
+    }
+  }
+  /* Zuletzt werden die Stepsizes angepasst:
+   */
+  for(int i=0;i<3;i++){
+    if(ind_changed[i]){
+      switch (i){
+        case 0:
+          if(xyz[0]>0){
+            X_SPEED = xyz[0];
+          }else{
+            arduino_ready(false);
+            return;
+          }
+          break;
+        case 1:
+          if(xyz[1]>0){
+            Y_SPEED = xyz[1];
+          }else{
+            arduino_ready(false);
+            return;
+          }
+          break;
+        case 2:
+          if(xyz[2]>0){
+            Z_SPEED = xyz[2];
+          }else{
+            arduino_ready(false);
+            return;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  if(ind_changed[0] || ind_changed[1] || ind_changed[2]){  
+    Serial.println("Speeds set");
+    arduino_ready(true);
+  }else{
+    Serial.println("Speeds are already set to those values");
+    arduino_ready(true);
+  }
+}
+/*
+//***********************************************************************************************************
+
+void G101(String msg){
+  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G101' erkannt wurde. 'msg' enthält den
+   *  Rest des Strings hinter "G101". Dieser darf nicht leer sein, ansonsten: error.
+   *  Es wird überprüft, ob 'msg' das richtige Format, also 's' oder 'S' gefolgt von einem float value hat.
+   *  Ist dies der Fall, wird die X und Y Geschwindigkeit (X_SPEED und Y_SPEED) dem Wert angepasst, ansonsten
+   *  error.
+   
+  if(msg.length()==0){
+    error(28);
+    arduino_ready(false);
+    return;
+  }
+  if(msg[0]!='s' && msg[0]!='S'){
+    error(26);
+    arduino_ready(false);
+    return;
+  }
+  bool dot_found = false;
+  msg = msg.substring(1);
+  for(int i=0;i<msg.length();i++){
+    if(!isDigit(msg[i]) && msg[i]!='.'){
+      error(7);
+      arduino_ready(false);
+      return;
+    }else if(msg[i]=='.'){
+      if(dot_found){
+        error(7);
+        arduino_ready(false);
+        return;
+      }
+      dot_found = true;
+    }
+  }
+  float val = msg.toFloat();
+  X_SPEED = val;
+  Y_SPEED = val;
+  Serial.println("X/Y speed changed");
+  arduino_ready(true);
+}
+
+//***********************************************************************************************************
+
+void G102(String msg){
+  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G102' erkannt wurde. 'msg' enthält den
+   *  Rest des Strings hinter "G102". Dieser darf nicht leer sein, ansonsten: error.
+   *  Es wird überprüft, ob 'msg' das richtige Format, also 's' oder 'S' gefolgt von einem float value hat.
+   *  Ist dies der Fall, wird die Z Geschwindigkeit (Z_SPEED) dem Wert angepasst, ansonsten: error.
+   
+  if(msg.length()==0){
+    error(29);
+    arduino_ready(false);
+    return;
+  }
+  if(msg[0]!='s' && msg[0]!='S'){
+    error(27);
+    arduino_ready(false);
+    return;
+  }
+  bool dot_found = false;
+  msg = msg.substring(1);
+  for(int i=0;i<msg.length();i++){
+    if(!isDigit(msg[i]) && msg[i]!='.'){
+      error(7);
+      arduino_ready(false);
+      return;
+    }else if(msg[i]=='.'){
+      if(dot_found){
+        error(7);
+        arduino_ready(false);
+        return;
+      }
+      dot_found = true;
+    }
+  }
+  float val = msg.toFloat();
+  Z_SPEED = val;
+  Serial.println("Z speed changed");
+  arduino_ready(true);
+}
+*/
+//***********************************************************************************************************
+
 void M17(){
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'M17' erkannt wurde.
    * Gibt Strom auf die Motoren.
@@ -408,7 +564,7 @@ void M18(){
 
 //***********************************************************************************************************
 
-void M92(String msg){
+void M92(String msg){ // set step sizes
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'M92' erkannt wurde. 'msg' enthält den
    *  Rest des Strings hinter "M92". Dieser darf nicht leer sein, ansonsten: error.
    *  Wenn die Eingabe für X, Y, bzw. Z falsch ist (wird per Funktion 'xyz_ident()' überprüft - siehe
@@ -444,13 +600,28 @@ void M92(String msg){
     if(ind_changed[i]){
       switch (i){
         case 0:
-          X_STEP_SIZE = xyz[0];
+          if(xyz[0]>0){
+            X_STEP_SIZE = xyz[0];
+          }else{
+            arduino_ready(false);
+            return;
+          }
           break;
         case 1:
-          Y_STEP_SIZE = xyz[1];
+          if(xyz[1]>0){
+            Y_STEP_SIZE = xyz[1];
+          }else{
+            arduino_ready(false);
+            return;
+          }
           break;
         case 2:
-          Z_STEP_SIZE = xyz[2];
+          if(xyz[2]>0){
+            Z_STEP_SIZE = xyz[2];
+          }else{
+            arduino_ready(false);
+            return;
+          }
           break;
         default:
           break;
@@ -481,7 +652,9 @@ void M114(){
   Serial.println("min. positions [mm]: X = "+String(X_MIN)+", Y = "+String(Y_MIN)+", Z = "+String(Z_MIN));
   Serial.println("max. positions [mm]: X = "+String(X_MAX)+", Y = "+String(Y_MAX)+", Z = "+String(Z_MAX));
   Serial.println("Step sizes [steps/mm]: X = "+String(X_STEP_SIZE)+", Y = "+String(Y_STEP_SIZE)+", Z = "+String(Z_STEP_SIZE));
-  Serial.println("Speed [mm/s]: "+String(SPEED));
+  Serial.println("X speed [mm/s]: "+String(X_SPEED));
+  Serial.println("Y speed [mm/s]: "+String(Y_SPEED));
+  Serial.println("Z speed [mm/s]: "+String(Z_SPEED));
   arduino_ready(true);
 }
 

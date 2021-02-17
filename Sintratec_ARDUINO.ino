@@ -21,11 +21,12 @@ String supported_M_codes[] = {"M17 (enable steppers)", "M18 (disable steppers)",
       "M114 (get motor information)", "M119 (check endstops)", "M810-M819 <str> (macros)"};//                                                     *
 //                                                                                                                                                *
 //supported "G" G-codes;                                                                                                                          *
-String supported_G_codes[] = {"G0 X<pos> Y<pos> Z<pos> F<rate> (linear move)", "G28 <X> <Y> <Z> (homing)", "G90 (absolute positioning)",//        *
-      "G91 (relative positioning)", "G92 X<x_pos> Y<y_pos> Z<z_pos> (set axis position)"};//                                                      *
+String supported_G_codes[] = {"G0 X<pos> Y<pos> Z<pos> (linear move)", "G28 <X> <Y> <Z> (homing)", "G90 (absolute positioning)",//                *
+      "G91 (relative positioning)", "G92 X<x_pos> Y<y_pos> Z<z_pos> (set axis position)",//                                                       *
+      "G100 X<x_speed> Y<y_speed> Z<z_speed> (setting speeds)"};//                                                                                *
 //                                                                                                                                                *
 /* Veränderbar per G-Code:                                                                                                                        *
- * X_POS, Y_POS, Z_POS, X_STEP_SIZE, Y_STEP_SIZE, Z_STEP_SIZE, SPEED, ABSOLUTE_POS, macro                                                         *
+ * X_POS, Y_POS, Z_POS, X_STEP_SIZE, Y_STEP_SIZE, Z_STEP_SIZE, SPEEDS, ABSOLUTE_POS, macro                                                        *
  *///                                                                                                                                             *
 float X_POS = 0;//   [mm]                                                                                                                         *
 float Y_POS = 0;//   [mm]                                                                                                                         *
@@ -39,7 +40,9 @@ float Z_MAX = 280;// [mm]                                                       
 float X_MAX_MOVE = X_MAX-X_MIN; // [mm]                                                                                                           *
 float Y_MAX_MOVE = Y_MAX-Y_MIN; // [mm]                                                                                                           *
 float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                                                                                           *
-float SPEED = 100;              // [mm/s]                                                                                                         *
+float X_SPEED = 100;              // [mm/s]                                                                                                       *
+float Y_SPEED = X_SPEED;          // [mm/s]                                                                                                       *
+float Z_SPEED = 500;              // [mm/s]                                                                                                       *
 float HOMING_SPEED[3] = {100,100,50};          // [mm/s]                                                                                          *
 byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,1}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                                                                     *
 byte HOMING_REBUMP_DISTANCE[3] = {50,50,50};   // [mm]                                                                                            *
@@ -91,6 +94,7 @@ void setup(){//                                                      *
    *///                                                              *
   Serial.begin(BAUDRATE);//                                          *
   Serial.flush();//                                                  *
+  
 }//                                                                  *
 //********************************************************************
 

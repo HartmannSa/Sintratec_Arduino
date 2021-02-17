@@ -8,33 +8,38 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
    */
   /* Passe die Drehrichtungen entsprechend den Vorzeichen der Verfahrwege an:
    */
-  float dir = 1;
+  int x_dir = -1;
+  int y_dir = -1;
+  int z_dir = -1;
   if(xdis<0){
     digitalWrite(X_DIR_PIN,LOW);
-    dir = -1;
+    //x_dir = -1;
   }else{
     digitalWrite(X_DIR_PIN,HIGH);
+    x_dir = 1;
   }
   if(ydis<0){
     digitalWrite(Y_DIR_PIN,LOW);
-    dir = -1;
+    //y_dir = -1;
   }else{
     digitalWrite(Y_DIR_PIN,HIGH);
+    y_dir = 1;
   }
   if(zdis<0){
     digitalWrite(Z_DIR_PIN,LOW);
-    dir = -1;
+    //z_dir = -1;
   }else{
     digitalWrite(Z_DIR_PIN,HIGH);
+    z_dir = 1;
   }
   /* Berechne die zu machenden Steps eines Motors, speichere sie in 'xyz_steps[3]' und merke
-   *  dir den Motor (mittels des Indizes 'max_ind'), der am weitesten fahren muss. Das wird
+   *  dir den Motor (mittels des Indizes 'ind_MaxSteps'), der am weitesten fahren muss. Das wird
    *  weiter unten wichtig für die Anzahl an Wiederholungen der for-Schleife. Diese wird benötigt
    *  um Motoren zu bewegen (google das).
    */
   float xyz_steps[3] = {0,0,0};
   float xyz_dis[3] = {abs(xdis),abs(ydis),abs(zdis)};
-  byte max_ind = 0;
+  byte ind_MaxSteps = 0;
   if(xmove){
     digitalWrite(X_ENABLE_PIN,LOW);
     xyz_steps[0] = X_STEP_SIZE*xyz_dis[0];
@@ -42,76 +47,107 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
   if(ymove){
     digitalWrite(Y_ENABLE_PIN,LOW);
     xyz_steps[1] = Y_STEP_SIZE*xyz_dis[1];
-    if(xyz_steps[1]>xyz_steps[max_ind]){
-      max_ind = 1;
+    if(xyz_steps[1]>xyz_steps[ind_MaxSteps]){
+      ind_MaxSteps = 1;
     }
   }
   if(zmove){
     digitalWrite(Z_ENABLE_PIN,LOW);
     xyz_steps[2] = Z_STEP_SIZE*xyz_dis[2];
-    if(xyz_steps[2] > xyz_steps[max_ind]){
-      max_ind = 2;
+    if(xyz_steps[2] > xyz_steps[ind_MaxSteps]){
+      ind_MaxSteps = 2;
     }
   }
-  if(xyz_steps[max_ind]==0){
-    return;
-  }else{
-    /* Hier werden die entsprechenden Motoren bewegt. Dies passiert mittels for-loop, in der gleichzeitig auch
-     * Abfragen gemacht werden, z.B. ob ein Stop-Signal gesendet wurde, ein Endstop berührt wurde oder wie sich
-     * die Motorpositionen ändern.
-     */
-    Serial.println("Linear Move");
-    /* Mit 'time_per_step' wird die Zeit zwischen zwei Steps berechnet, welche nötig ist, um den übergegenen
-     *  maximalen (!) Verfahrweg mit der aktuellen Geschwindigkeit 'SPEED' (= globale Variable) zu fahren.
-     *  Falls sich weitere Motoren mit geringerem Verfahrweg bewegen sollen, geschieht dies mit reduzierter
-     *  Geschwindigkeit, sodass alle Motoren gleichzeitig stehen bleiben.
-     */
-    float time_per_step = 1/(xyz_steps[max_ind]/xyz_dis[max_ind])/SPEED * 1000000; // duration for one step in µs
-    float x_factor = xyz_steps[0]/xyz_steps[max_ind];
-    float x_do_step = 0;
-    bool x_step_done = false;
-    float y_factor = xyz_steps[1]/xyz_steps[max_ind];
-    float y_do_step = 0;
-    bool y_step_done = false;
-    float z_factor = xyz_steps[2]/xyz_steps[max_ind];
-    float z_do_step = 0;
-    bool z_step_done = false;
-    for(int i=1;i<=xyz_steps[max_ind] && READY;i++){
-        x_do_step += x_factor;
-        y_do_step += y_factor;
-        z_do_step += z_factor;
-        if(x_do_step>=1){
-          x_step();
-          x_do_step -= 1;
-          x_step_done = true;
-        }
-        if(y_do_step>=1){
-          y_step();
-          y_do_step -= 1;
-          y_step_done = true;
-        }
-        if(z_do_step>=1){
-          z_step();
-          z_do_step -= 1;
-          z_step_done = true;
-        }
-        delayMicroseconds(time_per_step);
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //if(digitalRead(X_MIN_PIN)==HIGH || digitalRead(X_MAX_PIN)==HIGH || digitalRead(Y_MIN_PIN)==HIGH || digitalRead(Y_MAX_PIN)==HIGH || digitalRead(Z_MIN_PIN)==HIGH || digitalRead(Z_MAX_PIN)==HIGH){
-        if(digitalRead(X_MIN_PIN)==LOW || digitalRead(X_MAX_PIN)==LOW || digitalRead(Y_MIN_PIN)==LOW || digitalRead(Y_MAX_PIN)==LOW || digitalRead(Z_MIN_PIN)==LOW || digitalRead(Z_MAX_PIN)==LOW){
-          Serial.println("Endstop triggered,  movement stopped");
-          return;
-        }
-        update_POS(x_step_done,y_step_done,z_step_done,1/X_STEP_SIZE*dir,1/Y_STEP_SIZE*dir,1/Z_STEP_SIZE*dir);
-        x_step_done = false;
-        y_step_done = false;
-        z_step_done = false;
-        check_interrupt();
-      }
+
+  float xyz_delays[3] = {1/(xyz_steps[0]/xyz_dis[0])/X_SPEED*1000000 , 1/(xyz_steps[1]/xyz_dis[1])/Y_SPEED*1000000 , 1/(xyz_steps[2]/xyz_dis[2])/Z_SPEED*1000000}; // durations for one step in µs
+  unsigned int ind_MinDelay = indexOfMin(xyz_delays);
+  //unsigned int ind_MaxDelay = indexOfMax(xyz_delays);
+  float x_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[0];
+  float y_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[1];
+  float z_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[2];
+  float x_timeCnt = 1;
+  float y_timeCnt = 1;
+  float z_timeCnt = 1;
+  unsigned long int x_stepCnt = 0;
+  unsigned long int y_stepCnt = 0;
+  unsigned long int z_stepCnt = 0;
+  while(READY && (x_stepCnt<xyz_steps[0] || y_stepCnt<xyz_steps[1] || z_stepCnt<xyz_steps[2])){
+    if(x_timeCnt>=1 && x_stepCnt<xyz_steps[0]){
+      x_step();
+      x_stepCnt++;
+      X_POS += x_dir/X_STEP_SIZE;
+      x_timeCnt -= 1;
+    }
+    if(y_timeCnt>=1 && y_stepCnt<xyz_steps[1]){
+      y_step();
+      y_stepCnt++;
+      Y_POS += y_dir/Y_STEP_SIZE;
+      y_timeCnt -= 1;
+    }
+    if(z_timeCnt>=1 && z_stepCnt<xyz_steps[2]){
+      z_step();
+      z_stepCnt++;
+      Z_POS += z_dir/Z_STEP_SIZE;
+      z_timeCnt -= 1;
+    }
+    delayMicroseconds(xyz_delays[ind_MinDelay]);
+    x_timeCnt += x_timeAdd;
+    y_timeCnt += y_timeAdd;
+    z_timeCnt += z_timeAdd;
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //if(digitalRead(X_MIN_PIN)==HIGH || digitalRead(X_MAX_PIN)==HIGH || digitalRead(Y_MIN_PIN)==HIGH || digitalRead(Y_MAX_PIN)==HIGH || digitalRead(Z_MIN_PIN)==HIGH || digitalRead(Z_MAX_PIN)==HIGH){
+    if(digitalRead(X_MIN_PIN)==LOW || digitalRead(X_MAX_PIN)==LOW || digitalRead(Y_MIN_PIN)==LOW || digitalRead(Y_MAX_PIN)==LOW || digitalRead(Z_MIN_PIN)==LOW || digitalRead(Z_MAX_PIN)==LOW){
+      Serial.println("Endstop triggered,  movement stopped");
+      return;
+    }
+    check_interrupt();
   }
+  /*
+  Serial.println("Anzahl der Steps:");
+  Serial.println(xyz_steps[0]);
+  Serial.println(xyz_steps[1]);
+  Serial.println(xyz_steps[2]);
+  Serial.println("Dauer für Step:");
+  Serial.println(xyz_delays[0]);
+  Serial.println(xyz_delays[1]);
+  Serial.println(xyz_delays[2]);
+  Serial.println("mind. Dauer für Step:");
+  Serial.println(xyz_delays[ind_MinDelay]);
+  Serial.println("max steps:");
+  Serial.println(xyz_steps[ind_MaxSteps]);
+  Serial.println("übergebene Distanzen in mm:");
+  Serial.println(xdis);
+  Serial.println(ydis);
+  Serial.println(zdis);
+  Serial.println("Distanzen in mm:");
+  Serial.println(String(xyz_dis[0])+"\t"+String(xmove));
+  Serial.println(String(xyz_dis[1])+"\t"+String(ymove));
+  Serial.println(String(xyz_dis[2])+"\t"+String(zmove));
+  Serial.println("Richtung:");
+  Serial.println(x_dir);
+  Serial.println(y_dir);
+  Serial.println(z_dir);
+  Serial.println("Time add:");
+  Serial.println(x_timeAdd);
+  Serial.println(y_timeAdd);
+  Serial.println(z_timeAdd);
+  
+  Serial.println("Positions:");
+  Serial.println(X_POS);
+  Serial.println(Y_POS);
+  Serial.println(Z_POS);
+  Serial.println(xyz_delays[0]);
+  Serial.println(xyz_delays[1]);
+  Serial.println(xyz_delays[2]);
+  Serial.println(x_timeAdd);
+  Serial.println(y_timeAdd);
+  Serial.println(z_timeAdd);
+  Serial.println(indexOfMin(xyz_delays));
+  Serial.println(indexOfMax(xyz_delays));
+  */
 }
 
 //***********************************************************************************************************
