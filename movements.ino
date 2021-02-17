@@ -94,12 +94,7 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
     x_timeCnt += x_timeAdd;
     y_timeCnt += y_timeAdd;
     z_timeCnt += z_timeAdd;
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //if(digitalRead(X_MIN_PIN)==HIGH || digitalRead(X_MAX_PIN)==HIGH || digitalRead(Y_MIN_PIN)==HIGH || digitalRead(Y_MAX_PIN)==HIGH || digitalRead(Z_MIN_PIN)==HIGH || digitalRead(Z_MAX_PIN)==HIGH){
-    if(digitalRead(X_MIN_PIN)==LOW || digitalRead(X_MAX_PIN)==LOW || digitalRead(Y_MIN_PIN)==LOW || digitalRead(Y_MAX_PIN)==LOW || digitalRead(Z_MIN_PIN)==LOW || digitalRead(Z_MAX_PIN)==LOW){
+    if(isTriggered(X_MIN_PIN) || isTriggered(X_MAX_PIN) || isTriggered(Y_MIN_PIN) || isTriggered(Y_MAX_PIN) || isTriggered(Z_MIN_PIN) || isTriggered(Z_MAX_PIN)){
       Serial.println("Endstop triggered,  movement stopped");
       return;
     }
@@ -238,11 +233,7 @@ bool home_axis(char motor){
     digitalWrite(motor_enable_pin,LOW);
     digitalWrite(motor_dir_pin,LOW);
     float time_per_step = 1000000/motor_step_size/HOMING_SPEED[motor_ind]; // duration for one step in µs
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //while(digitalRead(motor_min_pin)==LOW && digitalRead(motor_max_pin)==LOW && READY){
-    while(digitalRead(motor_min_pin)==HIGH && digitalRead(motor_max_pin)==HIGH && READY){
+    while(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
       /*  
        * 1. Fahre bis Endstop gedrückt
        */
@@ -296,43 +287,31 @@ bool home_axis(char motor){
           break;
       }
       delayMicroseconds(time_per_step*HOMING_SPEED_REBUMP_DIVISOR[motor_ind]);
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //if(digitalRead(motor_min_pin)==HIGH || digitalRead(motor_max_pin)==HIGH){
-      if(digitalRead(motor_min_pin)==LOW || digitalRead(motor_max_pin)==LOW){
+      if(isTriggered(motor_min_pin) || isTriggered(motor_max_pin)){
         break;
       }
       check_interrupt();
     }
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //if(digitalRead(motor_min_pin)==LOW && digitalRead(motor_max_pin)==LOW && READY){
-    if(digitalRead(motor_min_pin)==HIGH && digitalRead(motor_max_pin)==HIGH && READY){
+    if(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
       error(16);
       return false;
     }else if(READY){
       digitalWrite(motor_dir_pin,HIGH);
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      //while(digitalRead(motor_min_pin)==HIGH && digitalRead(motor_max_pin)==HIGH && READY){
-      while(digitalRead(motor_min_pin)==LOW && digitalRead(motor_max_pin)==LOW && READY){
+      while((isTriggered(motor_min_pin) || isTriggered(motor_max_pin)) && READY){
         /*  
          * 4. Wenn Endstop erneut gedrückt, fahre zurück bis Endstop nicht mehr gedrückt
          */
         switch(motor_ind){
-        case 0:
-          x_step();
-          break;
-        case 1:
-          y_step();
-          break;
-        case 2:
-          z_step();
-          break;
-      }
+          case 0:
+            x_step();
+            break;
+          case 1:
+            y_step();
+            break;
+          case 2:
+            z_step();
+            break;
+        }
         delayMicroseconds(time_per_step*HOMING_SPEED_REBUMP_DIVISOR[motor_ind]);
         check_interrupt();
       }

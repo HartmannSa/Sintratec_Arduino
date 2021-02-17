@@ -42,8 +42,8 @@ float Y_MAX_MOVE = Y_MAX-Y_MIN; // [mm]                                         
 float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                                                                                           *
 float X_SPEED = 100;              // [mm/s]                                                                                                       *
 float Y_SPEED = X_SPEED;          // [mm/s]                                                                                                       *
-float Z_SPEED = 500;              // [mm/s]                                                                                                       *
-float HOMING_SPEED[3] = {100,100,50};          // [mm/s]                                                                                          *
+float Z_SPEED = 200;              // [mm/s]                                                                                                       *
+float HOMING_SPEED[3] = {10,10,10};          // [mm/s]                                                                                          *
 byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,1}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                                                                     *
 byte HOMING_REBUMP_DISTANCE[3] = {50,50,50};   // [mm]                                                                                            *
 bool ABSOLUTE_POS = true;//                                                                                                                       *
@@ -54,6 +54,10 @@ double Z_STEP_SIZE = 32; // step size for 1mm travel distance                   
 // "READY" beschreibt ob Druckprozess gestoppt wurde oder nicht. Falls ja wird keine Eingabe mehr angenommen, bis die Verbindung                  *
 //  resetet wurde.                                                                                                                                *
 bool READY = true;//                                                                                                                              *
+//                                                                                                                                                *
+// ENDSTOP_INVERTED = false bedeutet, dass Arduino den Endstop als GEDRÜCKT ansieht, wenn mechanisch KEINE Verbindung besteht, also               *
+// KEIN Stromfluss möglich ist                                                                                                                    *
+bool ENDSTOP_INVERTED = true;//                                                                                                                   *
 //                                                                                                                                                *
 // Die Variable "macro_ok" wird genutzt, um mit der Ausgabe 'ok' und der Übermittlung der Motoreigenschaften nach der Ausführung eines G-Codes    *
 // zu warten, bis das komplette Makro fertig ausgeführt wurde (Fehlermeldungen werden weiterhin auch zwischen den G-Codes eines Makros            *

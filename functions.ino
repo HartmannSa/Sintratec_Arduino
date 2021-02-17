@@ -162,7 +162,7 @@ String btn_state_str(int pin){
   /* Diese Funktion legt fest, bei welchem state eines Endstops
    *  "triggered" oder "open" ausgegeben wird.
    */
-  if (digitalRead(pin)==HIGH){
+  if (isTriggered(pin)){
     return "triggered";
   }else{
     return "open";
@@ -288,3 +288,21 @@ int indexOfMin(float arry[3]){
   }
   return ind;
 }*/
+
+//***********************************************************************************************************
+
+bool isTriggered(int pin){
+  if(ENDSTOP_INVERTED){
+    if(digitalRead(pin)==LOW){
+      return true;
+    }else if(digitalRead(pin)==HIGH){
+      return false;
+    }
+  }else{
+    if(digitalRead(pin)==LOW){
+      return false;
+    }else if(digitalRead(pin)==HIGH){
+      return true;
+    }
+  }
+}
