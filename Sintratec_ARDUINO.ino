@@ -26,7 +26,7 @@ String supported_G_codes[] = {"G0 X<pos> Y<pos> Z<pos> (linear move)", "G28 <X> 
       "G100 X<x_speed> Y<y_speed> Z<z_speed> (setting speeds)"};//                                                                                *
 //                                                                                                                                                *
 /* Veränderbar per G-Code:                                                                                                                        *
- * X_POS, Y_POS, Z_POS, X_STEP_SIZE, Y_STEP_SIZE, Z_STEP_SIZE, SPEEDS, ABSOLUTE_POS, macro                                                        *
+ * X_POS, Y_POS, Z_POS, X_STEP_SIZE, Y_STEP_SIZE, Z_STEP_SIZE, X_SPEED, Y_SPEED, Z_SPEED, ABSOLUTE_POS, macro                                     *
  *///                                                                                                                                             *
 float X_POS = 0;//   [mm]                                                                                                                         *
 float Y_POS = 0;//   [mm]                                                                                                                         *
@@ -43,7 +43,7 @@ float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                         
 float X_SPEED = 100;              // [mm/s]                                                                                                       *
 float Y_SPEED = X_SPEED;          // [mm/s]                                                                                                       *
 float Z_SPEED = 200;              // [mm/s]                                                                                                       *
-float HOMING_SPEED[3] = {10,10,10};          // [mm/s]                                                                                          *
+float HOMING_SPEED[3] = {10,10,10};          // [mm/s]                                                                                            *
 byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,1}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                                                                     *
 byte HOMING_REBUMP_DISTANCE[3] = {50,50,50};   // [mm]                                                                                            *
 bool ABSOLUTE_POS = true;//                                                                                                                       *
@@ -56,7 +56,7 @@ double Z_STEP_SIZE = 32; // step size for 1mm travel distance                   
 bool READY = true;//                                                                                                                              *
 //                                                                                                                                                *
 // ENDSTOP_INVERTED = false bedeutet, dass Arduino den Endstop als GEDRÜCKT ansieht, wenn mechanisch KEINE Verbindung besteht, also               *
-// KEIN Stromfluss möglich ist                                                                                                                    *
+// KEIN Stromfluss möglich ist (für Sintratec Printer muss es auf false stehen, für Testzwecke ohne Endstops auf true)                            *
 bool ENDSTOP_INVERTED = true;//                                                                                                                   *
 //                                                                                                                                                *
 // Die Variable "macro_ok" wird genutzt, um mit der Ausgabe 'ok' und der Übermittlung der Motoreigenschaften nach der Ausführung eines G-Codes    *

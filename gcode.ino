@@ -21,7 +21,7 @@ void G_gcode(String str){ // input: serial input string, but first character rem
     ind++;
   }
   int Gnumber = msg.substring(0,ind).toInt();
-  msg = remove_spaces(msg.substring(ind));
+  msg = msg.substring(ind);     
   switch (Gnumber){
     case 0:
       G0(msg);
@@ -179,12 +179,6 @@ void G0(String msg){
       arduino_ready(false);
       return;
     }else{
-      /*Serial.println(ind_changed[0]);
-      Serial.println(xyz[0]-X_POS);
-      Serial.println(ind_changed[1]);
-      Serial.println(xyz[1]-Y_POS);
-      Serial.println(ind_changed[2]);
-      Serial.println(xyz[2]-Z_POS);*/
       move_steppers(xyz[0]-X_POS,xyz[1]-Y_POS,xyz[2]-Z_POS,ind_changed[0],ind_changed[1],ind_changed[2]);
     }
   }else{
@@ -216,8 +210,11 @@ void G28(String msg){
    *  Andernfalls wird der Rest-String durchsucht und beim Fund entsprechender Zeichen nur die entsprechenden Achsen gehomed. Sollten andere
    *  Zeichen als x, y und z gefunden werden, wird ein Fehler ausgegeben und keine Achse gehomed.
    */
+   /* Die Variable home_success dient als Indikator fortlaufend in dieser Funktion, um zu überprüfen, ob nach jedem einzelnen Homing Versuch
+    *  einer Achse das Homing erfolgreich war. Falls nicht, wird home_success auf false gesetzt und die gesamte Funktion abgebrochen.
+    */
   bool home_success = false;
-  if(msg.length()==0){
+  if(msg.length()==0){   // home alle Achsen, wenn kein Argument hinter 'G92' empfangen wurde
     home_success = home_axis('x');
     if(!home_success){
       arduino_ready(false);
@@ -233,13 +230,19 @@ void G28(String msg){
       arduino_ready(false);
       return;
     }
-  }else{
+  }else{  // home nur spezifische Achsen
+    /* Mit xhome, yhome und zhome wird festgelegt, ob die entsprechende Achse gehomed (true) oder nicht gehomed
+     *  werden soll (false);
+     */
     bool xhome = false;
     bool yhome = false;
     bool zhome = false;
     byte ind = 0;
     byte l = msg.length();
-    while (ind<l){
+    /* Suche zunächst, ob die character 'x', 'y' oder 'z' (bzw. Großbuchstaben) in dem empfangenen String enthalten ist.
+     *  Falls ja, wird der jeweilige boolean (xhome, yhome oder zhome) auf true gesetzt.
+     */
+    while (ind<l){   
       if((msg[ind]=='x' || msg[ind]=='X')&&xhome==false){
         xhome=true;
       }else if((msg[ind]=='y' || msg[ind]=='Y')&&yhome==false){
@@ -253,6 +256,8 @@ void G28(String msg){
       }
       ind++;
     }
+    /* Nun wird abhängig vom boolean xhome, yhome ung zhome der Befehl zum homen der jeweiligen Achse gegeben:
+     */
     if(xhome){
       home_success = home_axis('x');
       if(!home_success){
@@ -333,8 +338,8 @@ void G92(String msg){ // set position
     }
   }
   /*  ...
-   *  Nun wird überprüft, ob die angegebenen Positionsänderungen zulässig sind, also im Bereich der
-   *  maximalen Verfahrwege liegen.
+   *  Nun wird überprüft, ob die angegebenen Positionsänderungen zulässig sind, d.h. ob sie in dem
+   *  Bereich liegen, in dem die Achsen verfahren können.
    *  ...
    */
   if((xyz[0]<X_MIN || xyz[0]>X_MAX) && ind_changed[0]){
@@ -453,89 +458,7 @@ void G100(String msg){
     arduino_ready(true);
   }
 }
-/*
-//***********************************************************************************************************
 
-void G101(String msg){
-  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G101' erkannt wurde. 'msg' enthält den
-   *  Rest des Strings hinter "G101". Dieser darf nicht leer sein, ansonsten: error.
-   *  Es wird überprüft, ob 'msg' das richtige Format, also 's' oder 'S' gefolgt von einem float value hat.
-   *  Ist dies der Fall, wird die X und Y Geschwindigkeit (X_SPEED und Y_SPEED) dem Wert angepasst, ansonsten
-   *  error.
-   
-  if(msg.length()==0){
-    error(28);
-    arduino_ready(false);
-    return;
-  }
-  if(msg[0]!='s' && msg[0]!='S'){
-    error(26);
-    arduino_ready(false);
-    return;
-  }
-  bool dot_found = false;
-  msg = msg.substring(1);
-  for(int i=0;i<msg.length();i++){
-    if(!isDigit(msg[i]) && msg[i]!='.'){
-      error(7);
-      arduino_ready(false);
-      return;
-    }else if(msg[i]=='.'){
-      if(dot_found){
-        error(7);
-        arduino_ready(false);
-        return;
-      }
-      dot_found = true;
-    }
-  }
-  float val = msg.toFloat();
-  X_SPEED = val;
-  Y_SPEED = val;
-  Serial.println("X/Y speed changed");
-  arduino_ready(true);
-}
-
-//***********************************************************************************************************
-
-void G102(String msg){
-  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G102' erkannt wurde. 'msg' enthält den
-   *  Rest des Strings hinter "G102". Dieser darf nicht leer sein, ansonsten: error.
-   *  Es wird überprüft, ob 'msg' das richtige Format, also 's' oder 'S' gefolgt von einem float value hat.
-   *  Ist dies der Fall, wird die Z Geschwindigkeit (Z_SPEED) dem Wert angepasst, ansonsten: error.
-   
-  if(msg.length()==0){
-    error(29);
-    arduino_ready(false);
-    return;
-  }
-  if(msg[0]!='s' && msg[0]!='S'){
-    error(27);
-    arduino_ready(false);
-    return;
-  }
-  bool dot_found = false;
-  msg = msg.substring(1);
-  for(int i=0;i<msg.length();i++){
-    if(!isDigit(msg[i]) && msg[i]!='.'){
-      error(7);
-      arduino_ready(false);
-      return;
-    }else if(msg[i]=='.'){
-      if(dot_found){
-        error(7);
-        arduino_ready(false);
-        return;
-      }
-      dot_found = true;
-    }
-  }
-  float val = msg.toFloat();
-  Z_SPEED = val;
-  Serial.println("Z speed changed");
-  arduino_ready(true);
-}
-*/
 //***********************************************************************************************************
 
 void M17(){
@@ -603,6 +526,7 @@ void M92(String msg){ // set step sizes
           if(xyz[0]>0){
             X_STEP_SIZE = xyz[0];
           }else{
+            error(30);
             arduino_ready(false);
             return;
           }
@@ -611,6 +535,7 @@ void M92(String msg){ // set step sizes
           if(xyz[1]>0){
             Y_STEP_SIZE = xyz[1];
           }else{
+            error(30);
             arduino_ready(false);
             return;
           }
@@ -619,6 +544,7 @@ void M92(String msg){ // set step sizes
           if(xyz[2]>0){
             Z_STEP_SIZE = xyz[2];
           }else{
+            error(30);
             arduino_ready(false);
             return;
           }
@@ -648,7 +574,9 @@ void M114(){
   }else{
     Serial.println("Positioning: relative");
   }
-  Serial.println("current position [mm]: X = "+String(X_POS)+", Y = "+String(Y_POS)+", Z = "+String(Z_POS));
+  Serial.println("X position [mm]: "+String(X_POS));
+  Serial.println("Y position [mm]: "+String(Y_POS));
+  Serial.println("Z position [mm]: "+String(Z_POS));
   Serial.println("min. positions [mm]: X = "+String(X_MIN)+", Y = "+String(Y_MIN)+", Z = "+String(Z_MIN));
   Serial.println("max. positions [mm]: X = "+String(X_MAX)+", Y = "+String(Y_MAX)+", Z = "+String(Z_MAX));
   Serial.println("Step sizes [steps/mm]: X = "+String(X_STEP_SIZE)+", Y = "+String(Y_STEP_SIZE)+", Z = "+String(Z_STEP_SIZE));
@@ -697,33 +625,37 @@ void M810_819(int macroNumber, String msg){
   }else{                                    // executes macro
     String command = macro[macroNumber];
     byte cl = command.length();
+    /* 
+     * Falls Makro ohne Inhalt bspw. durch "M810" ausgeführt werden soll: error 
+     */
     if(cl==0){
-      /* Falls Makro ohne Inhalt bspw. durch "M810" ausgeführt werden soll: error */
       error(14);
       arduino_ready(false);
       return;
+    }
+    /* ...
+     * Ansonsten fahre mit der Ausführung des Makros fort:
+     */
+    Serial.println("+ + + + + + + + Executing macro + + + + + + + + + +");
+    byte ind = 0;
+    byte from = 0;
+    macro_ok = true;
+    while(ind<=cl && macro_ok && READY){
+      /* Durchsuche hinterlegtes Makro (= 'command') nach Trennzeichen '|' und führe
+       *  einzelne G-Codes (= Substrings) aus.
+       *  Abbruch wenn Fehler auftreten ('macro_ok' = false) oder Druckprozess ge-
+       *  stoppt wird ('READY' = false)
+       */
+      if(command[ind]=='|' || ind==cl){
+        run_input(command.substring(from,ind));
+        from = ind+1;
+      }
+      ind++;
+    }
+    if(macro_ok){
+      Serial.println("+ + + + + + + + Executing macro done  + + + + + + +");
     }else{
-      Serial.println("+ + + + + + + + Executing macro + + + + + + + + + +");
-      byte ind = 0;
-      byte from = 0;
-      macro_ok = true;
-      while(ind<=cl && macro_ok && READY){
-        /* Durchsuche hinterlegtes Makro (= String) nach Trennzeichen '|' und führe
-         *  einzelne G-Codes (= Substrings) aus.
-         *  Abbruch wenn Fehler auftreten ('macro_ok' = false) oder Druckprozess ge-
-         *  stoppt wird ('READY' = false)
-         */
-        if(command[ind]=='|' || ind==cl){
-          run_input(command.substring(from,ind));
-          from = ind+1;
-        }
-        ind++;
-      }
-      if(macro_ok){
-        Serial.println("+ + + + + + + + Executing macro done  + + + + + + +");
-      }else{
-        Serial.println("+ + + + + + + + Executing macro aborted + + + + + +");
-      }
+      Serial.println("+ + + + + + + + Executing macro aborted + + + + + +");
     }
   }
 }

@@ -10,14 +10,14 @@ void error(byte nmbr){
     case 1:
       Serial.print("Only the following types of 'G' G-code are allowed:\n");
       for(byte i=0; i < sizeof(supported_G_codes)/sizeof(String); i++){
-        Serial.print("\\t• "+supported_G_codes[i]);
+        Serial.print("• "+supported_G_codes[i]);
         Serial.print("\n");
       }
       break;
     case 2:
       Serial.print("Only the following types of 'M' G-code are allowed:\n");
       for(byte i=0; i < sizeof(supported_M_codes)/sizeof(String); i++){
-        Serial.print("\\t• "+supported_M_codes[i]);
+        Serial.print("• "+supported_M_codes[i]);
         Serial.print("\n");
       }
       break;
@@ -138,7 +138,7 @@ void run_input(String str){
    * Ist die Eingabe nichts davon, wird ein Fehler ausgegeben.
    */
   String msg = str;
-  while(msg[0] == ' '){
+  while(msg[0] == ' '){       // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     msg.remove(0,1);
   }
   switch (msg[0]){
@@ -177,30 +177,31 @@ void arduino_ready(bool val){
    *  oder nicht erfolgreich war (wird über das Argument festgelegt). 
    *  Wenn erfolgreich: gebe 'ok' & aktuelle Motorpositionen, -stepsizes, -geschw.
    *  zurück
-   *  wenn erfolglos: 'error'
+   *  wenn erfolglos: 'error' & aktuelle Motorpositionen, -stepsizes, -geschw.
+   *  zurück
    */
   if(val){
     Serial.println("ok");
-    Serial.print(X_POS);
-    Serial.print("|");
-    Serial.print(Y_POS);
-    Serial.print("|");
-    Serial.print(Z_POS);
-    Serial.print("|");
-    Serial.print(X_STEP_SIZE);
-    Serial.print("|");
-    Serial.print(Y_STEP_SIZE);
-    Serial.print("|");
-    Serial.print(Z_STEP_SIZE);
-    Serial.print("|");
-    Serial.print(X_SPEED);
-    Serial.print("|");
-    Serial.print(Y_SPEED);
-    Serial.print("|");
-    Serial.println(Z_SPEED);
   }else{
     Serial.println("error");
   }
+  Serial.print(X_POS);
+  Serial.print("|");
+  Serial.print(Y_POS);
+  Serial.print("|");
+  Serial.print(Z_POS);
+  Serial.print("|");
+  Serial.print(X_STEP_SIZE);
+  Serial.print("|");
+  Serial.print(Y_STEP_SIZE);
+  Serial.print("|");
+  Serial.print(Z_STEP_SIZE);
+  Serial.print("|");
+  Serial.print(X_SPEED);
+  Serial.print("|");
+  Serial.print(Y_SPEED);
+  Serial.print("|");
+  Serial.println(Z_SPEED);
 }
 
 //***********************************************************************************************************
@@ -235,26 +236,6 @@ void check_interrupt(){
 
 //***********************************************************************************************************
 
-/*void update_POS(bool xmove,bool ymove,bool zmove,float xdis,float ydis,float zdis){
-  /* Diese Funktion wird per loop während einer Bewegung aufgerufen und aktualisiert
-   *  stetig die in den Variablen X_POS, Y_POS und Z_POS gespeicherten Positionen
-   *  der Motoren.
-   *  Die booleans geben an, welche Variablen, und die floats, mit welchen
-   *  Werten die Variablen geändert werden.
-   *//*
-  if(xmove){
-    X_POS += xdis;
-  }
-  if(ymove){
-    Y_POS += ydis;
-  }
-  if(zmove){
-    Z_POS += zdis;
-  }
-}*/
-
-//***********************************************************************************************************
-
 int indexOfMin(float arry[3]){
   /* Diese Funktion gibt den Index des kleinsten Elements aus dem Array 'arry' zurück.
    *  'arry' darf nur 3 Elemente enthalten
@@ -270,24 +251,6 @@ int indexOfMin(float arry[3]){
   }
   return ind;
 }
-
-//***********************************************************************************************************
-
-/*int indexOfMax(float arry[3]){
-  /* Diese Funktion gibt den Index des größten Elements aus dem Array 'arry' zurück.
-   *  'arry' darf nur 3 Elemente enthalten
-   *//*
-  int ind=-1;
-  int l=3;
-  float tmp=-10000000;
-  for(int i=0;i<l;i++){
-    if(arry[i]>tmp){
-      tmp = arry[i];
-      ind = i;
-    }
-  }
-  return ind;
-}*/
 
 //***********************************************************************************************************
 

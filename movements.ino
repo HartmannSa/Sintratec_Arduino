@@ -4,38 +4,35 @@
 
 void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, bool zmove){
   /* Bewegt die Motoren um den jeweiligen float 'xdis, 'ydis' und 'zdis', sofern zugehöriger
-   *  boolean 'xmove', etc. true ist.
-   */
-  /* Passe die Drehrichtungen entsprechend den Vorzeichen der Verfahrwege an:
+   *  boolean 'xmove', etc. true ist. */
+  /* 
+   *  Passe die Drehrichtungen entsprechend den Vorzeichen der Verfahrwege an:
+   *  (ACHTUNG: Darauf achten, wie die Motoren auf dem RAMPS Board eingesteckt sind!)
    */
   int x_dir = -1;
   int y_dir = -1;
   int z_dir = -1;
-  if(xdis<0){
+  if(xdis<0){                       // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Was ist vorwärts/rüvckwärts am Sintratec drucker? (Teste am Drucker!)
     digitalWrite(X_DIR_PIN,LOW);
-    //x_dir = -1;
   }else{
     digitalWrite(X_DIR_PIN,HIGH);
     x_dir = 1;
   }
   if(ydis<0){
     digitalWrite(Y_DIR_PIN,LOW);
-    //y_dir = -1;
   }else{
     digitalWrite(Y_DIR_PIN,HIGH);
     y_dir = 1;
   }
   if(zdis<0){
     digitalWrite(Z_DIR_PIN,LOW);
-    //z_dir = -1;
   }else{
     digitalWrite(Z_DIR_PIN,HIGH);
     z_dir = 1;
   }
-  /* Berechne die zu machenden Steps eines Motors, speichere sie in 'xyz_steps[3]' und merke
-   *  dir den Motor (mittels des Indizes 'ind_MaxSteps'), der am weitesten fahren muss. Das wird
-   *  weiter unten wichtig für die Anzahl an Wiederholungen der for-Schleife. Diese wird benötigt
-   *  um Motoren zu bewegen (google das).
+  /* Berechne die zu machenden Steps eines Motors, speichere sie in 'xyz_steps[3]' und aktiviere
+   *  diejenigen Motoren, welche verfahren sollen. Letzteres wird durch die übergebenen booleans
+   *  xmove, ymove und zmove indiziert.
    */
   float xyz_steps[3] = {0,0,0};
   float xyz_dis[3] = {abs(xdis),abs(ydis),abs(zdis)};
@@ -47,21 +44,30 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
   if(ymove){
     digitalWrite(Y_ENABLE_PIN,LOW);
     xyz_steps[1] = Y_STEP_SIZE*xyz_dis[1];
-    if(xyz_steps[1]>xyz_steps[ind_MaxSteps]){
-      ind_MaxSteps = 1;
-    }
   }
   if(zmove){
     digitalWrite(Z_ENABLE_PIN,LOW);
     xyz_steps[2] = Z_STEP_SIZE*xyz_dis[2];
-    if(xyz_steps[2] > xyz_steps[ind_MaxSteps]){
-      ind_MaxSteps = 2;
-    }
   }
-
+  /*
+   * Nun werden Werte berechnet, welche für die Bewegungen (siehe weiter unten in der while Schleife)
+   * relevant sind.
+   * - xyz_delays[3] gibt jeweils die Zeit zwischen zwei "steps" eines Motors an, welche abgewartet werden muss,
+   * damit die Verfahrgeschwindigkeit der jeweiligen vorgegebenen Geschwindigkeit (X_SPEED, Y_SPEED bzw. Z_SPEED)
+   * entspricht. Motorbewegungen bestehen bei Stepper Motoren immer aus einzelnen Steps (google das).
+   * - ind_MinDelay gibt den Index von xyz_delays[3] an, bei dem die kürzeste Wartezeit hinterlegt ist. Dies ist
+   * wichtig für...
+   * - x_timeAdd, y_timeAdd und z_timeAdd: Je nach Verhältnis der kürzesten Wartezeit und der jeweiligen Wartezeit
+   * des entsprechenden Motors wird ein Summand definiert, welche in der while Schleife immer auf den entsprechenden
+   * Counter des jeweiligen Motors aufaddiert wird:
+   * - x_timeCnt, y_timeCnt und z_timeCnt: Sobald ein Wert >= 1 ist, wird ein Step des jeweiligen Motors durchgeführt. Damit
+   * wird gewährleistet, dass sich die Achsen in der while Schleife (weiter unten) alle mit ihrer individuellen Ge-
+   * schwindigkeit drehen.
+   * - x_stepCnt, y_stepCnt und z_stepCnt: Zählen die bereits durchgeführten Steps mit. Sobald die Anzahl an Steps
+   * erreicht wird (also xyz_delays[<MotorIndex>]), wird kein weiterer Step durchgeführt.
+   */
   float xyz_delays[3] = {1/(xyz_steps[0]/xyz_dis[0])/X_SPEED*1000000 , 1/(xyz_steps[1]/xyz_dis[1])/Y_SPEED*1000000 , 1/(xyz_steps[2]/xyz_dis[2])/Z_SPEED*1000000}; // durations for one step in µs
   unsigned int ind_MinDelay = indexOfMin(xyz_delays);
-  //unsigned int ind_MaxDelay = indexOfMax(xyz_delays);
   float x_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[0];
   float y_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[1];
   float z_timeAdd = xyz_delays[ind_MinDelay]/xyz_delays[2];
@@ -71,6 +77,17 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
   unsigned long int x_stepCnt = 0;
   unsigned long int y_stepCnt = 0;
   unsigned long int z_stepCnt = 0;
+  /*
+   * Hier passiert die eigentliche Bewegung:
+   * Diese wird nur durchgefürt, solange der Druckprozess nicht gestoppt wurde und solange zumindest eine der Achsen
+   * noch nicht die Anzahl an zu vollführenden Steps erreicht hat (durch xyz_steps gegeben).
+   * Innerhalb der while Schleife wird zudem überprüft, ob die jeweilige Achse mit einem Step "dran" ist, also ob der
+   * Zeit-Counter x_timeCnt, y_timeCnt bzw. z_timeCnt >= 1 ist. Dies gewährleistet, dass die jeweilige Achse auch wirklich
+   * mit der vorgegeben Geschwindigkeit verfährt.
+   * Anmerkung: Es geht bei der Geschwindigkeit um die Geschw. der Achsen, NICHT der Motoren. Sprich, beispielsweise
+   * eins der Betten verfährt mit der Geschwindigkeit X_SPEED (oder Y_SPEED je nachdem), die Drehrate des Motors ist jedoch
+   * durch die Step Size UND X_SPEED gegeben.
+   */
   while(READY && (x_stepCnt<xyz_steps[0] || y_stepCnt<xyz_steps[1] || z_stepCnt<xyz_steps[2])){
     if(x_timeCnt>=1 && x_stepCnt<xyz_steps[0]){
       x_step();
@@ -98,6 +115,9 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
       Serial.println("Endstop triggered,  movement stopped");
       return;
     }
+    /*
+     * Siehe "functions":
+     */
     check_interrupt();
   }
   /*
@@ -129,7 +149,6 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
   Serial.println(x_timeAdd);
   Serial.println(y_timeAdd);
   Serial.println(z_timeAdd);
-  
   Serial.println("Positions:");
   Serial.println(X_POS);
   Serial.println(Y_POS);
@@ -230,9 +249,9 @@ bool home_axis(char motor){
      * Starte das Homing...
      */
     Serial.println(msg1);
-    digitalWrite(motor_enable_pin,LOW);
-    digitalWrite(motor_dir_pin,LOW);
-    float time_per_step = 1000000/motor_step_size/HOMING_SPEED[motor_ind]; // duration for one step in µs
+    digitalWrite(motor_enable_pin,LOW); // aktiviere Motor
+    digitalWrite(motor_dir_pin,LOW);    // stelle die Richtung des Motors ein: rückwärts
+    float time_per_step = 1000000/motor_step_size/HOMING_SPEED[motor_ind];  // Wartezeit zwischen zwei Steps in µs
     while(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
       /*  
        * 1. Fahre bis Endstop gedrückt
@@ -251,7 +270,7 @@ bool home_axis(char motor){
       delayMicroseconds(time_per_step);
       check_interrupt();
     }
-    digitalWrite(motor_dir_pin,HIGH);
+    digitalWrite(motor_dir_pin,HIGH); // stelle die Richtung des Motors ein: vorwärts
     for(int i=0; i<motor_step_size*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
       /*  
        * 2. Nachdem Endstop gedrückt: Fahre um 'HOMING_REBUMP_DISTANCE' mm zurück
@@ -270,7 +289,7 @@ bool home_axis(char motor){
       delayMicroseconds(time_per_step);
       check_interrupt();
     }
-    digitalWrite(motor_dir_pin,LOW);
+    digitalWrite(motor_dir_pin,LOW);  // stelle die Richtung des Motors ein: rückwärts
     for(int i=0; i<motor_step_size*1.01*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
       /*  
        * 3. Fahre erneut auf Endstop zu, diesmal aber langsamer
@@ -296,7 +315,7 @@ bool home_axis(char motor){
       error(16);
       return false;
     }else if(READY){
-      digitalWrite(motor_dir_pin,HIGH);
+      digitalWrite(motor_dir_pin,HIGH); // stelle die Richtung des Motors ein: vorwärts
       while((isTriggered(motor_min_pin) || isTriggered(motor_max_pin)) && READY){
         /*  
          * 4. Wenn Endstop erneut gedrückt, fahre zurück bis Endstop nicht mehr gedrückt
