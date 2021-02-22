@@ -636,7 +636,7 @@ void M810_819(int macroNumber, String msg){
     /* ...
      * Ansonsten fahre mit der Ausführung des Makros fort:
      */
-    Serial.println("+ + + + + + + + Executing macro + + + + + + + + + +");
+    Serial.println("+ + + + + + + + Executing macro "+String(macroNumber)+" + + + + + + + + + +");
     byte ind = 0;
     byte from = 0;
     macro_ok = true;
@@ -653,9 +653,9 @@ void M810_819(int macroNumber, String msg){
       ind++;
     }
     if(macro_ok){
-      Serial.println("+ + + + + + + + Executing macro done  + + + + + + +");
+      Serial.println("+ + + + + + + + Executing macro "+String(macroNumber)+" done  + + + + + + +");
     }else{
-      Serial.println("+ + + + + + + + Executing macro aborted + + + + + +");
+      Serial.println("+ + + + + + + + Executing macro "+String(macroNumber)+" aborted + + + + + +");
     }
   }
 }

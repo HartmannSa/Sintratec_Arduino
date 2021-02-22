@@ -1,0 +1,59 @@
+if(xyz_steps[max_ind]==0){
+    return;
+  }else{
+    /* Hier werden die entsprechenden Motoren bewegt. Dies passiert mittels for-loop, in der gleichzeitig auch
+     * Abfragen gemacht werden, z.B. ob ein Stop-Signal gesendet wurde, ein Endstop berührt wurde oder wie sich
+     * die Motorpositionen ändern.
+     */
+    Serial.println("Linear Move");
+    /* Mit 'time_per_step' wird die Zeit zwischen zwei Steps berechnet, welche nötig ist, um den übergegenen
+     *  maximalen (!) Verfahrweg mit der aktuellen Geschwindigkeit 'SPEED' (= globale Variable) zu fahren.
+     *  Falls sich weitere Motoren mit geringerem Verfahrweg bewegen sollen, geschieht dies mit reduzierter
+     *  Geschwindigkeit, sodass alle Motoren gleichzeitig stehen bleiben.
+     */
+    float time_per_step = 1/(xyz_steps[max_ind]/xyz_dis[max_ind])/X_SPEED * 1000000; // duration for one step in µs
+    float x_factor = xyz_steps[0]/xyz_steps[max_ind];
+    float x_do_step = 0;
+    bool x_step_done = false;
+    float y_factor = xyz_steps[1]/xyz_steps[max_ind];
+    float y_do_step = 0;
+    bool y_step_done = false;
+    float z_factor = xyz_steps[2]/xyz_steps[max_ind];
+    float z_do_step = 0;
+    bool z_step_done = false;
+    for(int i=1;i<=xyz_steps[max_ind] && READY;i++){
+        x_do_step += x_factor;
+        y_do_step += y_factor;
+        z_do_step += z_factor;
+        if(x_do_step>=1){
+          x_step();
+          x_do_step -= 1;
+          x_step_done = true;
+        }
+        if(y_do_step>=1){
+          y_step();
+          y_do_step -= 1;
+          y_step_done = true;
+        }
+        if(z_do_step>=1){
+          z_step();
+          z_do_step -= 1;
+          z_step_done = true;
+        }
+        delayMicroseconds(time_per_step);
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //if(digitalRead(X_MIN_PIN)==HIGH || digitalRead(X_MAX_PIN)==HIGH || digitalRead(Y_MIN_PIN)==HIGH || digitalRead(Y_MAX_PIN)==HIGH || digitalRead(Z_MIN_PIN)==HIGH || digitalRead(Z_MAX_PIN)==HIGH){
+        if(digitalRead(X_MIN_PIN)==LOW || digitalRead(X_MAX_PIN)==LOW || digitalRead(Y_MIN_PIN)==LOW || digitalRead(Y_MAX_PIN)==LOW || digitalRead(Z_MIN_PIN)==LOW || digitalRead(Z_MAX_PIN)==LOW){
+          Serial.println("Endstop triggered,  movement stopped");
+          return;
+        }
+        update_POS(x_step_done,y_step_done,z_step_done,1/X_STEP_SIZE*dir,1/Y_STEP_SIZE*dir,1/Z_STEP_SIZE*dir);
+        x_step_done = false;
+        y_step_done = false;
+        z_step_done = false;
+        check_interrupt();
+      }
+  }
