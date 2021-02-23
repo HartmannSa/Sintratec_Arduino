@@ -88,7 +88,7 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
    * eins der Betten verfährt mit der Geschwindigkeit X_SPEED (oder Y_SPEED je nachdem), die Drehrate des Motors ist jedoch
    * durch die Step Size UND X_SPEED gegeben.
    */
-  Serial.println("Moving steppers");
+  Serial.println("Moving steppers...");
   while(READY && (x_stepCnt<xyz_steps[0] || y_stepCnt<xyz_steps[1] || z_stepCnt<xyz_steps[2])){
     if(x_timeCnt>=1 && x_stepCnt<xyz_steps[0]){
       x_step();
@@ -291,7 +291,7 @@ bool home_axis(char motor){
       check_interrupt();
     }
     digitalWrite(motor_dir_pin,LOW);  // stelle die Richtung des Motors ein: rückwärts
-    for(int i=0; i<motor_step_size*1.01*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
+    for(int i=0; i<motor_step_size*1.05*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
       /*  
        * 3. Fahre erneut auf Endstop zu, diesmal aber langsamer
        */

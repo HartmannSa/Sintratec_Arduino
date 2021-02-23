@@ -91,23 +91,20 @@ void error(byte nmbr){
     case 25:
       Serial.println("M119 does not need any further input");
       break;
-    case 26:
-      Serial.println("Wrong input for G101");
-      break;
-    case 27:
-      Serial.println("Wrong input for G102");
-      break;
-    case 28:
-      Serial.println("Missing input for G101");
-      break;
-    case 29:
-      Serial.println("Missing input for G102");
-      break;
     case 30:
       Serial.println("Step sizes must be positive");
       break;
     case 31:
       Serial.println("Missing input for G100");
+      break;
+    case 32:
+      Serial.println("Aborted - speed value lies outside the allowed range for the x-speed (set by the Arduino)");
+      break;
+    case 33:
+      Serial.println("Aborted - speed value lies outside the allowed range for the y-speed (set by the Arduino)");
+      break;
+    case 34:
+      Serial.println("Aborted - speed value lies outside the allowed range for the z-speed (set by the Arduino)");
       break;
     case 100:
       Serial.println("PRINTING PROCESS STOPPED!");
@@ -123,9 +120,13 @@ void error(byte nmbr){
   /* Wenn es zu einem Fehler kommt, muss auch das ggf. aufgerufene
    * Macro beendet werden. Bei einer Makro-Ausführung wird stets
    * überprüft, ob 'macro_ok' = true ist, daher kann die Ausführung
-   * durch Ändern dieser Variable auf false abgebrochen werden.
+   * durch Ändern dieser Variable auf false abgebrochen werden. Dies
+   * passiert logischerweise nicht, wenn die Ausführung lediglich
+   * pausiert wird (also error(100)).
    */
-  macro_ok = false;
+  if(nmbr!=101){
+    macro_ok = false;
+  }
 }
 
 //***********************************************************************************************************
@@ -137,10 +138,7 @@ void run_input(String str){
    * funktion gegeben (siehe "gcode.ino").
    * Ist die Eingabe nichts davon, wird ein Fehler ausgegeben.
    */
-  String msg = str;
-  while(msg[0] == ' '){       // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    msg.remove(0,1);
-  }
+  String msg = remove_spaces(str);
   switch (msg[0]){
     case 'g':
     case 'G':

@@ -386,7 +386,7 @@ void G92(String msg){ // set position
 
 //***********************************************************************************************************
 
-void G100(String msg){
+void G100(String msg){ // set speeds
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G100' erkannt wurde. 'msg' enthält den
    *  Rest des Strings hinter "G100". Dieser darf nicht leer sein, ansonsten: error.
    *  Wenn die Eingabe für X, Y, bzw. Z falsch ist (wird per Funktion 'xyz_ident()' überprüft - siehe
@@ -398,8 +398,8 @@ void G100(String msg){
     arduino_ready(false);
     return;
   }
-  float xyz_init[3] = {X_STEP_SIZE,Y_STEP_SIZE,Z_STEP_SIZE};
-  float xyz[3] = {X_STEP_SIZE,Y_STEP_SIZE,Z_STEP_SIZE};
+  float xyz_init[3] = {-1,-1,-1};
+  float xyz[3] = {-1,-1,-1};
   bool ind_changed[3] = {false,false,false};
   bool input_ok = xyz_ident(msg,xyz);
   if(!input_ok){
@@ -416,31 +416,34 @@ void G100(String msg){
       ind_changed[i]=true;
     }
   }
-  /* Zuletzt werden die Stepsizes angepasst:
+  /* Zuletzt werden die Geschwindigkeiten angepasst:
    */
   for(int i=0;i<3;i++){
     if(ind_changed[i]){
       switch (i){
         case 0:
-          if(xyz[0]>0){
+          if(xyz[0]>=X_SPEED_MIN && xyz[0]<=X_SPEED_MAX){
             X_SPEED = xyz[0];
           }else{
+            error(32);
             arduino_ready(false);
             return;
           }
           break;
         case 1:
-          if(xyz[1]>0){
+          if(xyz[1]>=Y_SPEED_MIN && xyz[1]<=Y_SPEED_MAX){
             Y_SPEED = xyz[1];
           }else{
+            error(33);
             arduino_ready(false);
             return;
           }
           break;
         case 2:
-          if(xyz[2]>0){
+          if(xyz[2]>=Z_SPEED_MIN && xyz[2]<=Z_SPEED_MAX){
             Z_SPEED = xyz[2];
           }else{
+            error(34);
             arduino_ready(false);
             return;
           }
