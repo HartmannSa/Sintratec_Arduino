@@ -577,12 +577,12 @@ void M114(){
   }else{
     Serial.println("Positioning: relative");
   }
-  Serial.println("X position [mm]: "+String(X_POS));
-  Serial.println("Y position [mm]: "+String(Y_POS));
-  Serial.println("Z position [mm]: "+String(Z_POS));
-  Serial.println("min. positions [mm]: X = "+String(X_MIN)+", Y = "+String(Y_MIN)+", Z = "+String(Z_MIN));
-  Serial.println("max. positions [mm]: X = "+String(X_MAX)+", Y = "+String(Y_MAX)+", Z = "+String(Z_MAX));
-  Serial.println("Step sizes [steps/mm]: X = "+String(X_STEP_SIZE)+", Y = "+String(Y_STEP_SIZE)+", Z = "+String(Z_STEP_SIZE));
+  Serial.println("X position [mm]: "+String(X_POS)+" (min = "+String(X_MIN)+", max = "+String(X_MAX)+")");
+  Serial.println("Y position [mm]: "+String(Y_POS)+" (min = "+String(Y_MIN)+", max = "+String(Y_MAX)+")");
+  Serial.println("Z position [mm]: "+String(Z_POS)+" (min = "+String(Z_MIN)+", max = "+String(Z_MAX)+")");
+  Serial.println("X step size [steps/mm]: "+String(X_STEP_SIZE));
+  Serial.println("Y step size [steps/mm]: "+String(Y_STEP_SIZE));
+  Serial.println("Z step size [steps/mm]: "+String(Z_STEP_SIZE));
   Serial.println("X speed [mm/s]: "+String(X_SPEED));
   Serial.println("Y speed [mm/s]: "+String(Y_SPEED));
   Serial.println("Z speed [mm/s]: "+String(Z_SPEED));

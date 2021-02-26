@@ -38,13 +38,13 @@ void error(byte nmbr){
       Serial.println("Wrong input for S");
       break;
     case 8:
-      Serial.println("Aborted - movement would be outside x-range");
+      Serial.println("Aborted - movement would be outside X-range (min = "+String(X_MIN)+"mm, max = "+String(X_MAX)+"mm)");
       break;
     case 9:
-      Serial.println("Aborted - movement would be outside y-range");
+      Serial.println("Aborted - movement would be outside Y-range (min = "+String(Y_MIN)+"mm, max = "+String(Y_MAX)+"mm)");
       break;
     case 10:
-      Serial.println("Aborted - movement would be outside z-range");
+      Serial.println("Aborted - movement would be outside Z-range (min = "+String(Z_MIN)+"mm, max = "+String(Z_MAX)+"mm)");
       break;
     case 11:
       Serial.println("Missing input for G92");
@@ -65,13 +65,13 @@ void error(byte nmbr){
       Serial.println("Endstop was not hit on second approach!");
       break;
     case 17:
-      Serial.println("Cannot set position outside x-range!");
+      Serial.println("Cannot set position outside X-range (min = "+String(X_MIN)+"mm, max = "+String(X_MAX)+"mm)");
       break;
     case 18:
-      Serial.println("Cannot set position outside y-range!");
+      Serial.println("Cannot set position outside Y-range (min = "+String(Y_MIN)+"mm, max = "+String(Y_MAX)+"mm)");
       break;
     case 19:
-      Serial.println("Cannot set position outside z-range!");
+      Serial.println("Cannot set position outside Z-range (min = "+String(Z_MIN)+"mm, max = "+String(Z_MAX)+"mm)");
       break;
     case 20:
       Serial.println("Wrong input for G90");
@@ -98,13 +98,13 @@ void error(byte nmbr){
       Serial.println("Missing input for G100");
       break;
     case 32:
-      Serial.println("Aborted - speed value lies outside the allowed range for the x-speed (set by the Arduino)");
+      Serial.println("Aborted - X speed value lies outside the allowed range (min = "+String(X_SPEED_MIN)+"mm/s, max = "+String(X_SPEED_MAX)+")");
       break;
     case 33:
-      Serial.println("Aborted - speed value lies outside the allowed range for the y-speed (set by the Arduino)");
+      Serial.println("Aborted - Y speed value lies outside the allowed range (min = "+String(Y_SPEED_MIN)+"mm/s, max = "+String(Y_SPEED_MAX)+")");
       break;
     case 34:
-      Serial.println("Aborted - speed value lies outside the allowed range for the z-speed (set by the Arduino)");
+      Serial.println("Aborted - Z speed value lies outside the allowed range (min = "+String(Z_SPEED_MIN)+"mm/s, max = "+String(Z_SPEED_MAX)+")");
       break;
     case 100:
       Serial.println("PRINTING PROCESS STOPPED!");
@@ -204,30 +204,65 @@ void arduino_ready(bool val){
 
 //***********************************************************************************************************
 
-void check_interrupt(){
-  /* Diese Funktion wird in "movements.ino" genutzt, um während einer
-   *  Motorbewegung zu überprüfen, ob stop- oder pause-Aufrufe über
+void check_interrupt(bool motors_moving){
+  /* Diese Funktion wird in "movements.ino" und in der main loop genutzt,
+   *  um zu überprüfen, ob stop-, pause- oder andere Aufrufe über
    *  die serielle Schnittstelle empfangen werden.
    *  Dementsprechend wird hier reagiert und ggf. gewartet.
    */
   if(Serial.available()>0){
-    String temp = Serial.readStringUntil('\n');
-    if(temp.equals("stop")){
+    String msg = Serial.readStringUntil('\n');
+    
+    if(msg.equals("stop")){
+      /* Wenn"stop" empfangen wurde, setze READY auf false (passiert mit "error(100);)
+       *  und kehre zurück:
+       */
       error(100);
       return;
-    }else if(temp.equals("pause")){
+    }
+    
+    else if(msg.equals("pause")){
+      /* Wenn "pause" empfangen wurde, gebe zunächst eine Message aus...
+       */
       error(101);
-      temp = " ";
-      while(!temp.equals("pause")){
+      msg = " ";
+      /* ... und gehe dann in eine while-Schleife, solange bis erneut "pause" empfangen wird,
+       *  der Prozess also fortgesetzt wird:
+       */
+      while(!msg.equals("pause")){
+        /* Während der Prozess pausiert ist, akzeptiert der Arduino nur:
+         *  "M114" oder "m114" (gebe Motorstatus aus) 
+         *  "stop" (breche gesamten Druckprozess ab)
+         *  "G100..." oder "g100..." (Geschw.-Änderung)
+         */
         delay(0.01);
-        temp = Serial.readStringUntil('\n');
-        if(temp.equals("M114") || temp.equals("m114")){
+        msg = Serial.readStringUntil('\n');
+        msg = remove_spaces(msg);
+        if(msg.equals("M114") || msg.equals("m114")){
           M114();
         }
+        else if(msg.equals("stop")){
+          error(100);
+          return;
+        }
+        else if(msg.indexOf("G100")>=0 || msg.indexOf("g100")>=0){
+          run_input(msg);
+        }
       }
-      Serial.println("Continue process");
-    }else{
-      Serial.println("Arduino not ready yet!");
+      Serial.println("...process continued!");
+    }
+    
+    else{
+      if(motors_moving){
+        /* Falls sich die Motoren aktuell bewegen, ignoriere
+         *  die Eingabe...
+         */
+        Serial.println("Arduino not ready yet!");
+      }else{
+        /* .... Andernfalls führe die Eingabe aus:
+         */
+        run_input(msg);
+      }
     }
   }
 }

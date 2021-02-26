@@ -40,22 +40,22 @@ float Z_MAX = 280;// [mm]                                                       
 float X_MAX_MOVE = X_MAX-X_MIN; // [mm]                                                                                                           *
 float Y_MAX_MOVE = Y_MAX-Y_MIN; // [mm]                                                                                                           *
 float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                                                                                           *
-float X_SPEED = 2;                // [mm/s]                                                                                                       *
-float Y_SPEED = X_SPEED;          // [mm/s]                                                                                                       *
-float Z_SPEED = 10;               // [mm/s]                                                                                                       *
-float X_SPEED_MIN = 0.001;        // [mm/s]                                                                                                       *
-float X_SPEED_MAX = 20;           // [mm/s]                                                                                                       *
-float Y_SPEED_MIN = 0.001;        // [mm/s]                                                                                                       *
-float Y_SPEED_MAX = 20;           // [mm/s]                                                                                                       *
-float Z_SPEED_MIN = 1;            // [mm/s]                                                                                                       *
-float Z_SPEED_MAX = 120;          // [mm/s]                                                                                                       *
-float HOMING_SPEED[3] = {2,2,3};                // [mm/s]                                                                                         *
-byte HOMING_SPEED_REBUMP_DIVISOR[3] = {10,10,10}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert) *                                                                                     *
+float X_SPEED = 2;                // [mm/s]  overwritten when Raspberry Pi starts                                                                 *
+float Y_SPEED = 2;                // [mm/s]  overwritten when Raspberry Pi starts                                                                 *
+float Z_SPEED = 60;               // [mm/s]  overwritten when Raspberry Pi starts                                                                 *
+float X_SPEED_MIN = 0.5;          // [mm/s]                                                                                                       *
+float X_SPEED_MAX = 40;           // [mm/s]                                                                                                       *
+float Y_SPEED_MIN = 0.5;          // [mm/s]                                                                                                       *
+float Y_SPEED_MAX = 40;           // [mm/s]                                                                                                       *
+float Z_SPEED_MIN = 20;           // [mm/s]                                                                                                       *
+float Z_SPEED_MAX = 200;          // [mm/s]                                                                                                       *
+float HOMING_SPEED[3] = {5,5,60};              // [mm/s]                                                                                          *
+byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,1}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                       
 byte HOMING_REBUMP_DISTANCE[3] = {10,10,10};   // [mm]                                                                                            *
 bool ABSOLUTE_POS = true;//                                                                                                                       *
-double X_STEP_SIZE = 1600; // step size for 1mm travel distance                                                                                   *
-double Y_STEP_SIZE = 1600; // step size for 1mm travel distance                                                                                   *
-double Z_STEP_SIZE = 32; // step size for 1mm travel distance                                                                                     *
+double X_STEP_SIZE = 1612.5; // step size for 1mm travel distance                                                                                 *
+double Y_STEP_SIZE = 1612.5; // step size for 1mm travel distance                                                                                 *
+double Z_STEP_SIZE = 33; // step size for 1mm travel distance                                                                                     *
 //                                                                                                                                                *
 // "READY" beschreibt ob Druckprozess gestoppt wurde oder nicht. Falls ja wird keine Eingabe mehr angenommen, bis die Verbindung                  *
 //  resetet wurde.                                                                                                                                *
@@ -63,7 +63,7 @@ bool READY = true;//                                                            
 //                                                                                                                                                *
 // ENDSTOP_INVERTED = false bedeutet, dass Arduino den Endstop als GEDRÜCKT ansieht, wenn mechanisch KEINE Verbindung besteht, also               *
 // KEIN Stromfluss möglich ist (für Sintratec Printer muss es auf false stehen, für Testzwecke ohne Endstops auf true)                            *
-bool ENDSTOP_INVERTED = true;//                                                                                                                   *
+bool ENDSTOP_INVERTED = true;//                                                                                                                  *
 //                                                                                                                                                *
 // Die Variable "macro_ok" wird genutzt, um mit der Ausgabe 'ok' und der Übermittlung der Motoreigenschaften nach der Ausführung eines G-Codes    *
 // zu warten, bis das komplette Makro fertig ausgeführt wurde (Fehlermeldungen werden weiterhin auch zwischen den G-Codes eines Makros            *
@@ -104,7 +104,6 @@ void setup(){//                                                      *
    *///                                                              *
   Serial.begin(BAUDRATE);//                                          *
   Serial.flush();//                                                  *
-  
 }//                                                                  *
 //********************************************************************
 
@@ -114,39 +113,16 @@ void setup(){//                                                      *
 //                                                                                                                                *
 void loop() {//                                                                                                                   *
   /* Das einzige was er macht, ist auf Eingaben der seriellen Schnittstelle zu warten.                                            *
+   *  Dies passiert über die Funktion "check:interrupt()" (siehe "functions.ino").                                                *
+   *  Voraussetzung für Eingaben über die serielle Schnittstelle ist, dass der Arduino bereit ist,                                *
+   *  was über die globale Variable "READY" festgelegt wird:                                                                      *
    */ //                                                                                                                          *
-  if(Serial.available() > 0){//                                                                                                   *
-    /* speichere Eingabe in "msg" -> dies löscht automatisch den Buffer der ser. Schnittstelle                                    *
-     *///                                                                                                                         *
-    String msg = Serial.readStringUntil('\n');//                                                                                  *
-    if(READY == true){//                                                                                                          *
-        /* Überprüfe insbesondere, ob der Druckprozess pausiert oder gar gestoppt                                                 *
-         * wurde. Wurde er pausiert, ist lediglich die Abfrage der Motor-Stati mittels                                            * 
-         * M114 möglich, bis die Pause aufgehoben wird.                                                                           *
-         * .....                                                                                                                  *
+  if(READY == true){//                                                                                                            *
+        /* Für "check_interrupt()" siehe "functions.ino":                                                                         *
          *///                                                                                                                     *
-        if(msg.equals("stop")){//                                                                                                 *
-            error(100); /* ist genau genommen kein Error, wurde aber aus strukturellen Gründen in error-Funktion verschoben*///   *
-            return;//                                                                                                             *
-        }else if(msg.equals("pause")){//                                                                                          *
-            error(101); /* ist genau genommen kein Error, wurde aber aus strukturellen Gründen in error-Funktion verschoben*///   *
-            msg = " ";//                                                                                                          *
-            while(!msg.equals("pause")){//                                                                                        *
-              delay(0.01);//                                                                                                      *
-              msg = Serial.readStringUntil('\n');//                                                                               *
-              if(msg.equals("M114") || msg.equals("m114")){//                                                                     *
-                M114();//                                                                                                         *
-              }//                                                                                                                 *
-            }//                                                                                                                   *
-            Serial.println("Continue process");//                                                                                 *
-        }else{//                                                                                                                  *
-            /* .... Andernfalls führt er die Eingabe aus (siehe "functions.ino"):                                                 *
-             *///                                                                                                                 *
-            run_input(msg);//                                                                                                     *
-        }//                                                                                                                       *
-    }else{//                                                                                                                      *
-      Serial.println("Printing process was stopped. For a restart, restart the console.");//                                      *
-    }//                                                                                                                           *
+        check_interrupt(false);//                                                                                                 *
+  }else{//                                                                                                                        *
+    Serial.println("Printing process was stopped. For a restart, restart the console.");//                                        *
   }//                                                                                                                             *
 }//                                                                                                                               *
 //*********************************************************************************************************************************

@@ -119,50 +119,8 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
     /*
      * Siehe "functions":
      */
-    check_interrupt();
+    check_interrupt(true);
   }
-  /*
-  Serial.println("Anzahl der Steps:");
-  Serial.println(xyz_steps[0]);
-  Serial.println(xyz_steps[1]);
-  Serial.println(xyz_steps[2]);
-  Serial.println("Dauer für Step:");
-  Serial.println(xyz_delays[0]);
-  Serial.println(xyz_delays[1]);
-  Serial.println(xyz_delays[2]);
-  Serial.println("mind. Dauer für Step:");
-  Serial.println(xyz_delays[ind_MinDelay]);
-  Serial.println("max steps:");
-  Serial.println(xyz_steps[ind_MaxSteps]);
-  Serial.println("übergebene Distanzen in mm:");
-  Serial.println(xdis);
-  Serial.println(ydis);
-  Serial.println(zdis);
-  Serial.println("Distanzen in mm:");
-  Serial.println(String(xyz_dis[0])+"\t"+String(xmove));
-  Serial.println(String(xyz_dis[1])+"\t"+String(ymove));
-  Serial.println(String(xyz_dis[2])+"\t"+String(zmove));
-  Serial.println("Richtung:");
-  Serial.println(x_dir);
-  Serial.println(y_dir);
-  Serial.println(z_dir);
-  Serial.println("Time add:");
-  Serial.println(x_timeAdd);
-  Serial.println(y_timeAdd);
-  Serial.println(z_timeAdd);
-  Serial.println("Positions:");
-  Serial.println(X_POS);
-  Serial.println(Y_POS);
-  Serial.println(Z_POS);
-  Serial.println(xyz_delays[0]);
-  Serial.println(xyz_delays[1]);
-  Serial.println(xyz_delays[2]);
-  Serial.println(x_timeAdd);
-  Serial.println(y_timeAdd);
-  Serial.println(z_timeAdd);
-  Serial.println(indexOfMin(xyz_delays));
-  Serial.println(indexOfMax(xyz_delays));
-  */
 }
 
 //***********************************************************************************************************
@@ -202,7 +160,7 @@ bool home_axis(char motor){
    *    - Fahre bis Endstop "MIN" gedrückt
    *    - Fahre eine gewisse Distanz zurück (gegeben durch globale Variable 'HOMING_REBUMP_DISTANCE')
    *    - Fahre erneut Richtung Endstop, jedoch mit verminderter Geschwindigkeit (gegeben durch globale Variablen
-   *      'SPEED' geteilt durch 'HOMING_SPEED_REBUMP_DIVISOR'
+   *      'HOMING_SPEED' geteilt durch 'HOMING_SPEED_REBUMP_DIVISOR'
    *    - Wenn Endstop nach gewisser Strecke nicht erreicht wird -> Error und return false
    *    - Ansonsten -> Homing fertig
    *    - Setze entsprechende Motorposition ('X_POS', etc.) auf das gegebene Minimum ('X_MIN', etc.) und return
@@ -213,10 +171,11 @@ bool home_axis(char motor){
     String msg2 = "Homing "+String(motor)+"-axis done";
     byte motor_enable_pin;
     byte motor_dir_pin;
-    byte motor_step_size;
+    float motor_step_size;
     byte motor_ind;
     byte motor_min_pin;
     byte motor_max_pin;
+    float motor_speed;
     /*
      * Definiere Variablen, welche weiter unten benutzt werden, dem Motor entsprechend:
      */
@@ -250,8 +209,8 @@ bool home_axis(char motor){
      * Starte das Homing...
      */
     Serial.println(msg1);
-    digitalWrite(motor_enable_pin,LOW); // aktiviere Motor
-    digitalWrite(motor_dir_pin,LOW);    // stelle die Richtung des Motors ein: rückwärts
+    digitalWrite(motor_enable_pin, LOW);  // aktiviere Motor
+    digitalWrite(motor_dir_pin, LOW);     // stelle die Richtung des Motors ein: rückwärts
     float time_per_step = 1000000/motor_step_size/HOMING_SPEED[motor_ind];  // Wartezeit zwischen zwei Steps in µs
     while(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
       /*  
@@ -269,7 +228,7 @@ bool home_axis(char motor){
           break;
       }
       delayMicroseconds(time_per_step);
-      check_interrupt();
+      check_interrupt(true);
     }
     digitalWrite(motor_dir_pin,HIGH); // stelle die Richtung des Motors ein: vorwärts
     for(int i=0; i<motor_step_size*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
@@ -288,7 +247,7 @@ bool home_axis(char motor){
           break;
       }
       delayMicroseconds(time_per_step);
-      check_interrupt();
+      check_interrupt(true);
     }
     digitalWrite(motor_dir_pin,LOW);  // stelle die Richtung des Motors ein: rückwärts
     for(int i=0; i<motor_step_size*1.05*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
@@ -310,7 +269,7 @@ bool home_axis(char motor){
       if(isTriggered(motor_min_pin) || isTriggered(motor_max_pin)){
         break;
       }
-      check_interrupt();
+      check_interrupt(true);
     }
     if(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
       error(16);
@@ -333,7 +292,7 @@ bool home_axis(char motor){
             break;
         }
         delayMicroseconds(time_per_step*HOMING_SPEED_REBUMP_DIVISOR[motor_ind]);
-        check_interrupt();
+        check_interrupt(true);
       }
       switch(motor_ind){
         /*  
