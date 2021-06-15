@@ -32,11 +32,11 @@ float X_POS = 10;//  [mm]                                                       
 float Y_POS = 110;// [mm]                                                                                                                         *
 float Z_POS = 0;//   [mm]                                                                                                                         *
 float X_MIN = 0;//   [mm]                                                                                                                         *
-float X_MAX = 130;// [mm]                                                                                                                         *
+float X_MAX = 140;// [mm]                                                                                                                         *
 float Y_MIN = 0;//   [mm]                                                                                                                         *
-float Y_MAX = 130;// [mm]                                                                                                                         *
+float Y_MAX = 140;// [mm]                                                                                                                         *
 float Z_MIN = 0;//   [mm]                                                                                                                         *
-float Z_MAX = 280;// [mm]                                                                                                                         *
+float Z_MAX = 2;// [mm]                                                                                                                         *
 float X_MAX_MOVE = X_MAX-X_MIN; // [mm]                                                                                                           *
 float Y_MAX_MOVE = Y_MAX-Y_MIN; // [mm]                                                                                                           *
 float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                                                                                           *
@@ -47,10 +47,10 @@ float X_SPEED_MIN = 0.5;          // [mm/s]                                     
 float X_SPEED_MAX = 40;           // [mm/s]                                                                                                       *
 float Y_SPEED_MIN = 0.5;          // [mm/s]                                                                                                       *
 float Y_SPEED_MAX = 40;           // [mm/s]                                                                                                       *
-float Z_SPEED_MIN = 20;           // [mm/s]                                                                                                       *
+float Z_SPEED_MIN = 1;            // [mm/s]                                                                                                       *
 float Z_SPEED_MAX = 200;          // [mm/s]                                                                                                       *
-float HOMING_SPEED[3] = {5,5,60};              // [mm/s]                                                                                          *
-byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,1}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                       
+float HOMING_SPEED[3] = {5,5,20};              // [mm/s]                                                                                          *
+byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,2}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                       
 byte HOMING_REBUMP_DISTANCE[3] = {10,10,10};   // [mm]                                                                                            *
 bool ABSOLUTE_POS = true;//                                                                                                                       *
 double X_STEP_SIZE = 1612.5; // step size for 1mm travel distance                                                                                 *
@@ -63,7 +63,7 @@ bool READY = true;//                                                            
 //                                                                                                                                                *
 // ENDSTOP_INVERTED = false bedeutet, dass Arduino den Endstop als GEDRÜCKT ansieht, wenn mechanisch KEINE Verbindung besteht, also               *
 // KEIN Stromfluss möglich ist (für Sintratec Printer muss es auf false stehen, für Testzwecke ohne Endstops auf true)                            *
-bool ENDSTOP_INVERTED = true;//                                                                                                                  *
+bool ENDSTOP_INVERTED = false;//                                                                                                                  *
 //                                                                                                                                                *
 // Die Variable "macro_ok" wird genutzt, um mit der Ausgabe 'ok' und der Übermittlung der Motoreigenschaften nach der Ausführung eines G-Codes    *
 // zu warten, bis das komplette Makro fertig ausgeführt wurde (Fehlermeldungen werden weiterhin auch zwischen den G-Codes eines Makros            *
