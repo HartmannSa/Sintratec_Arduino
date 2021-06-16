@@ -23,7 +23,8 @@ String supported_M_codes[] = {"M17 (enable steppers)", "M18 (disable steppers)",
 //supported "G" G-codes;                                                                                                                          *
 String supported_G_codes[] = {"G0 X<pos> Y<pos> Z<pos> (linear move)", "G28 <X> <Y> <Z> (homing)", "G90 (absolute positioning)",//                *
       "G91 (relative positioning)", "G92 X<x_pos> Y<y_pos> Z<z_pos> (set axis position)",//                                                       *
-      "G100 X<x_speed> Y<y_speed> Z<z_speed> (set speeds)"};//                                                                                    *
+      "G100 X<x_speed> Y<y_speed> Z<z_speed> (set speeds)",
+      "G101 X<x_speed> Y<y_speed> Z<z_speed> (set homing speeds)"};//                                                                                    *
 //                                                                                                                                                *
 /* Veränderbar per G-Code:                                                                                                                        *
  * X_POS, Y_POS, Z_POS, X_STEP_SIZE, Y_STEP_SIZE, Z_STEP_SIZE, X_SPEED, Y_SPEED, Z_SPEED, ABSOLUTE_POS, macro                                     *
@@ -36,7 +37,7 @@ float X_MAX = 140;// [mm]                                                       
 float Y_MIN = 0;//   [mm]                                                                                                                         *
 float Y_MAX = 140;// [mm]                                                                                                                         *
 float Z_MIN = 0;//   [mm]                                                                                                                         *
-float Z_MAX = 2;// [mm]                                                                                                                         *
+float Z_MAX = 273;// [mm]                                                                                                                         *
 float X_MAX_MOVE = X_MAX-X_MIN; // [mm]                                                                                                           *
 float Y_MAX_MOVE = Y_MAX-Y_MIN; // [mm]                                                                                                           *
 float Z_MAX_MOVE = Z_MAX-Z_MIN; // [mm]                                                                                                           *
@@ -48,8 +49,11 @@ float X_SPEED_MAX = 40;           // [mm/s]                                     
 float Y_SPEED_MIN = 0.5;          // [mm/s]                                                                                                       *
 float Y_SPEED_MAX = 40;           // [mm/s]                                                                                                       *
 float Z_SPEED_MIN = 1;            // [mm/s]                                                                                                       *
-float Z_SPEED_MAX = 200;          // [mm/s]                                                                                                       *
-float HOMING_SPEED[3] = {5,5,20};              // [mm/s]                                                                                          *
+float Z_SPEED_MAX = 200;          // [mm/s]   
+float X_HOMING_SPEED = 5;         // [mm/s]  overwritten when Raspberry Pi starts                                                                                                     *
+float Y_HOMING_SPEED = 5;         // [mm/s]  overwritten when Raspberry Pi starts                                                                                                     *
+float Z_HOMING_SPEED = 20;        // [mm/s]  overwritten when Raspberry Pi starts                                                                                                     *
+float HOMING_SPEED[3] = {X_HOMING_SPEED,Y_HOMING_SPEED,Z_HOMING_SPEED};              // [mm/s]                                                    *
 byte HOMING_SPEED_REBUMP_DIVISOR[3] = {2,2,2}; // [] (Divisor für Geschw., mit der sich der Motor dem entspr. Endstop beim 2. Approach nähert)    *                                       
 byte HOMING_REBUMP_DISTANCE[3] = {10,10,10};   // [mm]                                                                                            *
 bool ABSOLUTE_POS = true;//                                                                                                                       *

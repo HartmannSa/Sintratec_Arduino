@@ -463,6 +463,83 @@ void G100(String msg){ // set speeds
 }
 
 //***********************************************************************************************************
+void G101(String msg){ // set Homing speeds
+  /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'G101' erkannt wurde. 'msg' enthält den
+   *  Rest des Strings hinter "G101". Dieser darf nicht leer sein, ansonsten: error.
+   *  Wenn die Eingabe für X, Y, bzw. Z falsch ist (wird per Funktion 'xyz_ident()' überprüft - siehe
+   *  "string_editing.ino"), wird der entsprechende Fehler ausgegeben und die Funktion abgebrochen.
+   *  ...
+   */
+  if(msg.length()==0){
+    error(35);
+    arduino_ready(false);
+    return;
+  }
+  float xyz_init[3] = {-1,-1,-1};
+  float xyz[3] = {-1,-1,-1};
+  bool ind_changed[3] = {false,false,false};
+  bool input_ok = xyz_ident(msg,xyz);
+  if(!input_ok){
+    arduino_ready(false);
+    return;
+  }
+  /*  ...
+   *  Ansonsten wird überprüft, welche Eingaben gemacht wurden, d.h. welche Motor-Stepsizes geändert werden
+   *  sollen. Diese Informationen werden in 'ind_changed[3]' gespeichert.
+   *  ...
+   */
+  for(int i=0;i<3;i++){
+    if(xyz[i]!=xyz_init[i]){
+      ind_changed[i]=true;
+    }
+  }
+  /* Zuletzt werden die Geschwindigkeiten angepasst:
+   */
+  for(int i=0;i<3;i++){
+    if(ind_changed[i]){
+      switch (i){
+        case 0:
+          if(xyz[0]>=X_SPEED_MIN && xyz[0]<=X_SPEED_MAX){
+            X_HOMING_SPEED = xyz[0];
+          }else{
+            error(32);
+            arduino_ready(false);
+            return;
+          }
+          break;
+        case 1:
+          if(xyz[1]>=Y_SPEED_MIN && xyz[1]<=Y_SPEED_MAX){
+            Y_HOMING_SPEED = xyz[1];
+          }else{
+            error(33);
+            arduino_ready(false);
+            return;
+          }
+          break;
+        case 2:
+          if(xyz[2]>=Z_SPEED_MIN && xyz[2]<=Z_SPEED_MAX){
+            Z_HOMING_SPEED = xyz[2];
+          }else{
+            error(34);
+            arduino_ready(false);
+            return;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  if(ind_changed[0] || ind_changed[1] || ind_changed[2]){  
+    Serial.println("Homing Speeds set");
+    arduino_ready(true);
+  }else{
+    Serial.println("Homing Speeds are already set to those values");
+    arduino_ready(true);
+  }
+}
+
+//***********************************************************************************************************
 
 void M17(){
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'M17' erkannt wurde.

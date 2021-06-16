@@ -106,6 +106,9 @@ void error(byte nmbr){
     case 34:
       Serial.println("Aborted - Z speed value lies outside the allowed range (min = "+String(Z_SPEED_MIN)+"mm/s, max = "+String(Z_SPEED_MAX)+")");
       break;
+    case 35:
+      Serial.println("Missing input for G101");
+      break;
     case 100:
       Serial.println("PRINTING PROCESS STOPPED!");
       READY = false;
