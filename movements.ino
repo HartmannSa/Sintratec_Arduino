@@ -12,7 +12,7 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
   int x_dir = -1;
   int y_dir = -1;
   int z_dir = -1;
-  if(xdis<0){                       // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Was ist vorwärts/rüvckwärts am Sintratec drucker? (Teste am Drucker!)
+  if(xdis<0){                      
     digitalWrite(X_DIR_PIN,LOW);
   }else{
     digitalWrite(X_DIR_PIN,HIGH);
@@ -112,10 +112,42 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
     x_timeCnt += x_timeAdd;
     y_timeCnt += y_timeAdd;
     z_timeCnt += z_timeAdd;
-    if(isTriggered(X_MIN_PIN) || isTriggered(X_MAX_PIN) || isTriggered(Y_MIN_PIN) || isTriggered(Y_MAX_PIN) || isTriggered(Z_MIN_PIN) || isTriggered(Z_MAX_PIN)){
-      Serial.println("Endstop triggered,  movement stopped");
-      return;
+    if (MODE_SECURE) {
+      if(isTriggered(X_MIN_PIN) || isTriggered(X_MAX_PIN) || isTriggered(Y_MIN_PIN) || isTriggered(Y_MAX_PIN) || isTriggered(Z_MIN_PIN) || isTriggered(Z_MAX_PIN)){
+        Serial.println("Endstop triggered,  movement stopped");
+        return;
+      }
+    } else {
+        if (isTriggered(X_MIN_PIN) && xmove && x_dir== -1){
+          Serial.println("Aborted! Moving in wrong x-direction!");
+          return;
+        } else if (isTriggered(X_MAX_PIN) && xmove && x_dir== 1){
+          Serial.println("Aborted! Moving in wrong x-direction!");
+          return;
+        } else if (isTriggered(Y_MIN_PIN) && ymove && y_dir== -1){
+          Serial.println("Aborted! Moving in wrong y-direction!");
+          return;
+        } else if (isTriggered(Y_MAX_PIN) && ymove && y_dir== 1){
+          Serial.println("Aborted! Moving in wrong y-direction!");
+          return;
+        } else if (isTriggered(Z_MIN_PIN) && zmove && z_dir== -1 && xyz_steps[2]>0){
+          Serial.println("Aborted! Moving in wrong z-direction!");
+          return;        
+        } else if (isTriggered(Z_MAX_PIN) && zmove && z_dir== 1 && xyz_steps[2]>0){
+          Serial.println("Aborted! Moving in wrong z-direction!");
+          return;
+        } 
     }
+    /*if (isTriggered(Z_MIN_PIN) && zmove && z_timeCnt>=1 && z_dir==-1){
+      Serial.println("Moving z-axis aborted! Endstop triggered!");
+      return;
+    } else if (isTriggered(Z_MIN_PIN) && zmove && z_timeCnt>=1 && z_dir==1){
+      Serial.println("Endstop hit!");
+      // return;
+    } else if (isTriggered(Z_MAX_PIN) || isTriggered(Y_MIN_PIN) || isTriggered(Y_MAX_PIN) || isTriggered(X_MIN_PIN) || isTriggered(X_MAX_PIN) ){
+      Serial.println("Endstop triggered, movement stopped");
+      return;
+    }*/
     /*
      * Siehe "functions":
      */

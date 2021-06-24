@@ -91,6 +91,12 @@ void error(byte nmbr){
     case 25:
       Serial.println("M119 does not need any further input");
       break;
+    case 26:
+      Serial.println("M120 does not need any further input");
+      break;
+    case 27:
+      Serial.println("M121 does not need any further input");
+      break;
     case 30:
       Serial.println("Step sizes must be positive");
       break;
@@ -202,7 +208,9 @@ void arduino_ready(bool val){
   Serial.print("|");
   Serial.print(Y_SPEED);
   Serial.print("|");
-  Serial.println(Z_SPEED);
+  Serial.print(Z_SPEED);
+  Serial.print("|");
+  Serial.println(MODE_SECURE);
 }
 
 //***********************************************************************************************************

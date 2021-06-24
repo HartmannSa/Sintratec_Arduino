@@ -51,6 +51,9 @@ void G_gcode(String str){ // input: serial input string, but first character rem
     case 100:
       G100(msg);
       break;
+    case 101:
+      G101(msg);
+      break;
     default:
       error(1);
       arduino_ready(false);
@@ -113,6 +116,22 @@ void M_gcode(String str){ // input: serial input string, but first character rem
         M119();
       }else{
         error(25);
+        arduino_ready(false);
+      }
+      break;
+     case 120:
+      if(msg.length()==0){
+        M120();
+      }else{
+        error(26);
+        arduino_ready(false);
+      }
+      break;
+    case 121:
+      if(msg.length()==0){
+        M121();
+      }else{
+        error(27);
         arduino_ready(false);
       }
       break;
@@ -501,6 +520,7 @@ void G101(String msg){ // set Homing speeds
         case 0:
           if(xyz[0]>=X_SPEED_MIN && xyz[0]<=X_SPEED_MAX){
             X_HOMING_SPEED = xyz[0];
+            HOMING_SPEED[0] = X_HOMING_SPEED;
           }else{
             error(32);
             arduino_ready(false);
@@ -510,6 +530,7 @@ void G101(String msg){ // set Homing speeds
         case 1:
           if(xyz[1]>=Y_SPEED_MIN && xyz[1]<=Y_SPEED_MAX){
             Y_HOMING_SPEED = xyz[1];
+            HOMING_SPEED[1] = Y_HOMING_SPEED;
           }else{
             error(33);
             arduino_ready(false);
@@ -519,6 +540,7 @@ void G101(String msg){ // set Homing speeds
         case 2:
           if(xyz[2]>=Z_SPEED_MIN && xyz[2]<=Z_SPEED_MAX){
             Z_HOMING_SPEED = xyz[2];
+            HOMING_SPEED[2] = Z_HOMING_SPEED;
           }else{
             error(34);
             arduino_ready(false);
@@ -649,6 +671,11 @@ void M114(){
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'M114' erkannt wurde.
    * Gibt (aktuelle) Motoreigenschaften seriell zurück.
    */
+  if(MODE_SECURE){
+    Serial.println("Secure Mode: enabled");
+  }else{
+    Serial.println("Secure Mode: disabled");
+  }  
   if(ABSOLUTE_POS){
     Serial.println("Positioning: absolute");
   }else{
@@ -690,7 +717,20 @@ void M119(){
 }
 
 //***********************************************************************************************************
-
+void M120(){
+  MODE_SECURE = true;
+  Serial.println("Enabled Secure Mode");  
+  arduino_ready(true);
+  }
+  
+//***********************************************************************************************************
+void M121(){
+  MODE_SECURE = false;
+  Serial.println("DISABLED Secure Mode");
+  arduino_ready(true);
+  }
+  
+//***********************************************************************************************************
 void M810_819(int macroNumber, String msg){
   /* Diese Funktion wird ausgeführt, wenn in der seriellen Eingabe 'M810...', 'M811...', ..., 'M819...'
    *  erkannt wurde.
