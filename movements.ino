@@ -114,27 +114,36 @@ void move_steppers(float xdis, float ydis, float zdis, bool xmove, bool ymove, b
     z_timeCnt += z_timeAdd;
     if (MODE_SECURE) {
       if(isTriggered(X_MIN_PIN) || isTriggered(X_MAX_PIN) || isTriggered(Y_MIN_PIN) || isTriggered(Y_MAX_PIN) || isTriggered(Z_MIN_PIN) || isTriggered(Z_MAX_PIN)){
-        Serial.println("Endstop triggered,  movement stopped");
+        //Serial.println("Endstop triggered,  movement stopped");
+        error(40);
+        arduino_ready(false);
         return;
       }
     } else {
         if (isTriggered(X_MIN_PIN) && xmove && x_dir== -1){
-          Serial.println("Aborted! Moving in wrong x-direction!");
+          //Serial.println("Aborted! Moving in wrong x-direction!");
+          error(41);
+          arduino_ready(false);
           return;
         } else if (isTriggered(X_MAX_PIN) && xmove && x_dir== 1){
-          Serial.println("Aborted! Moving in wrong x-direction!");
+          error(41);
+          arduino_ready(false);
           return;
         } else if (isTriggered(Y_MIN_PIN) && ymove && y_dir== -1){
-          Serial.println("Aborted! Moving in wrong y-direction!");
+          error(42);
+          arduino_ready(false);
           return;
         } else if (isTriggered(Y_MAX_PIN) && ymove && y_dir== 1){
-          Serial.println("Aborted! Moving in wrong y-direction!");
+          error(42);
+          arduino_ready(false);
           return;
         } else if (isTriggered(Z_MIN_PIN) && zmove && z_dir== -1 && xyz_steps[2]>0){
-          Serial.println("Aborted! Moving in wrong z-direction!");
+          error(43);
+          arduino_ready(false);
           return;        
         } else if (isTriggered(Z_MAX_PIN) && zmove && z_dir== 1 && xyz_steps[2]>0){
-          Serial.println("Aborted! Moving in wrong z-direction!");
+          error(43);
+          arduino_ready(false);
           return;
         } 
     }
@@ -183,6 +192,13 @@ void z_step(){
 }
 
 //***********************************************************************************************************
+int change_direction(int input){
+  if (input==0){
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
 bool home_axis(char motor){
   /* Diese Funktion homed die Achse, die durch den char 'motor' übergeben wurde.
@@ -242,6 +258,8 @@ bool home_axis(char motor){
      */
     Serial.println(msg1);
     digitalWrite(motor_enable_pin, LOW);  // aktiviere Motor
+    //int motor_dir = 0;
+    //digitalWrite(motor_dir_pin, motor_dir);
     digitalWrite(motor_dir_pin, LOW);     // stelle die Richtung des Motors ein: rückwärts
     float time_per_step = 1000000/motor_step_size/HOMING_SPEED[motor_ind];  // Wartezeit zwischen zwei Steps in µs
     while(!isTriggered(motor_min_pin) && !isTriggered(motor_max_pin) && READY){
@@ -263,6 +281,10 @@ bool home_axis(char motor){
       check_interrupt(true);
     }
     digitalWrite(motor_dir_pin,HIGH); // stelle die Richtung des Motors ein: vorwärts
+    /*Choose next direction with respect to the Endstop which is triggered */
+    /*if (isTriggered(motor_min_pin)) {
+      digitalWrite(motor_dir_pin,change_direction(motor_dir)); // stelle die Richtung des Motors ein: vorwärts
+    }*/
     for(int i=0; i<motor_step_size*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
       /*  
        * 2. Nachdem Endstop gedrückt: Fahre um 'HOMING_REBUMP_DISTANCE' mm zurück
@@ -282,6 +304,7 @@ bool home_axis(char motor){
       check_interrupt(true);
     }
     digitalWrite(motor_dir_pin,LOW);  // stelle die Richtung des Motors ein: rückwärts
+    //digitalWrite(motor_dir_pin,change_direction(motor_dir));
     for(int i=0; i<motor_step_size*1.05*HOMING_REBUMP_DISTANCE[motor_ind] && READY;i++){
       /*  
        * 3. Fahre erneut auf Endstop zu, diesmal aber langsamer
@@ -308,6 +331,7 @@ bool home_axis(char motor){
       return false;
     }else if(READY){
       digitalWrite(motor_dir_pin,HIGH); // stelle die Richtung des Motors ein: vorwärts
+      //digitalWrite(motor_dir_pin,change_direction(motor_dir));
       while((isTriggered(motor_min_pin) || isTriggered(motor_max_pin)) && READY){
         /*  
          * 4. Wenn Endstop erneut gedrückt, fahre zurück bis Endstop nicht mehr gedrückt

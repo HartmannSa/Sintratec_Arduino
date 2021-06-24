@@ -217,7 +217,7 @@ void G0(String msg){
       move_steppers(xyz[0],xyz[1],xyz[2],ind_changed[0],ind_changed[1],ind_changed[2]);
     }
   }
-  arduino_ready(true);
+  arduino_ready(true); // Dadurch kommt ok noch NACH ERROR
 }
 
 //***********************************************************************************************************

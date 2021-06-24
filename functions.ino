@@ -115,6 +115,18 @@ void error(byte nmbr){
     case 35:
       Serial.println("Missing input for G101");
       break;
+    case 40:
+      Serial.println("Endstop triggered,  movement stopped");
+      break;
+    case 41:
+      Serial.println("Aborted! Moving in wrong x-direction!");
+      break;
+    case 42:
+      Serial.println("Aborted! Moving in wrong y-direction!");
+      break;
+    case 43:
+      Serial.println("Aborted! Moving in wrong z-direction!");
+      break;
     case 100:
       Serial.println("PRINTING PROCESS STOPPED!");
       READY = false;
